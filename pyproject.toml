@@ -1,0 +1,32 @@
+[project]
+name = "music-store-assistant"
+version = "0.1.0"
+description = "Customer Support Bot for Algorhythm Music Store - LangGraph Demo"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-community>=0.3.0",
+    "langgraph>=0.2.0",
+    "python-dotenv>=1.0.0",
+    "sqlalchemy>=2.0.0",
+    "langchain-google-genai>=3.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

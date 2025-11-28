@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "music_store_assistant": "./src/graph.py:create_graph"
+  },
+  "env": ".env"
+}

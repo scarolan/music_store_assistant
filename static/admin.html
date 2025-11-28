@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisor Dashboard - Algorhythm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    
+    <!-- Navigation -->
+    <nav class="bg-gray-800 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="text-3xl">🎵</div>
+                    <span class="text-xl font-bold gradient-text">Algorhythm</span>
+                    <span class="bg-red-600 text-xs px-2 py-1 rounded-full font-semibold">ADMIN</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-shield text-sm"></i>
+                        </div>
+                        <span class="text-sm">Supervisor</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">Approval Queue</h1>
+            <p class="text-gray-400">Review and approve sensitive customer requests</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Pending Approvals</p>
+                        <p id="pendingCount" class="text-3xl font-bold text-yellow-400">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-600/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-clock text-yellow-400 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Approved Today</p>
+                        <p id="approvedCount" class="text-3xl font-bold text-green-400">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-600/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check text-green-400 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Rejected Today</p>
+                        <p id="rejectedCount" class="text-3xl font-bold text-red-400">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-times text-red-400 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Approvals -->
+        <div class="bg-gray-800 rounded-lg border border-gray-700">
+            <div class="p-6 border-b border-gray-700">
+                <h2 class="text-xl font-semibold flex items-center">
+                    <span class="pulse-dot w-3 h-3 bg-yellow-400 rounded-full mr-3"></span>
+                    Pending Requests
+                </h2>
+            </div>
+            
+            <div id="pendingList" class="divide-y divide-gray-700">
+                <!-- Empty state -->
+                <div id="emptyState" class="p-12 text-center">
+                    <div class="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-inbox text-gray-500 text-2xl"></i>
+                    </div>
+                    <p class="text-gray-400 text-lg mb-2">No pending approvals</p>
+                    <p class="text-gray-500 text-sm">When customers request refunds, they'll appear here</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="mt-8 bg-gray-800 rounded-lg border border-gray-700">
+            <div class="p-6 border-b border-gray-700">
+                <h2 class="text-xl font-semibold">Recent Activity</h2>
+            </div>
+            <div id="activityLog" class="p-6 space-y-3 max-h-64 overflow-y-auto">
+                <p class="text-gray-500 text-sm text-center">Activity will appear here...</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // State
+        let pendingApprovals = new Map();
+        let approvedCount = 0;
+        let rejectedCount = 0;
+
+        // Elements
+        const pendingList = document.getElementById('pendingList');
+        const emptyState = document.getElementById('emptyState');
+        const pendingCountEl = document.getElementById('pendingCount');
+        const approvedCountEl = document.getElementById('approvedCount');
+        const rejectedCountEl = document.getElementById('rejectedCount');
+        const activityLog = document.getElementById('activityLog');
+
+        // Poll for pending approvals
+        async function fetchPendingApprovals() {
+            try {
+                const response = await fetch('/admin/pending');
+                const data = await response.json();
+                
+                // Update the pending list
+                updatePendingList(data.pending);
+            } catch (error) {
+                console.error('Error fetching pending approvals:', error);
+            }
+        }
+
+        function updatePendingList(pending) {
+            // Track current pending
+            const currentIds = new Set(pending.map(p => p.thread_id));
+            
+            // Remove items no longer pending
+            pendingApprovals.forEach((_, threadId) => {
+                if (!currentIds.has(threadId)) {
+                    pendingApprovals.delete(threadId);
+                }
+            });
+
+            // Add new items
+            pending.forEach(item => {
+                if (!pendingApprovals.has(item.thread_id)) {
+                    pendingApprovals.set(item.thread_id, item);
+                    addActivityLog(`New refund request from Customer #${item.customer_id}`, 'warning');
+                }
+            });
+
+            // Update UI
+            renderPendingList();
+            pendingCountEl.textContent = pendingApprovals.size;
+        }
+
+        function renderPendingList() {
+            if (pendingApprovals.size === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            
+            // Clear existing items (except empty state)
+            Array.from(pendingList.children).forEach(child => {
+                if (child.id !== 'emptyState') {
+                    child.remove();
+                }
+            });
+
+            // Add pending items
+            pendingApprovals.forEach((item, threadId) => {
+                const itemEl = document.createElement('div');
+                itemEl.id = `pending-${threadId}`;
+                itemEl.className = 'p-6 hover:bg-gray-750 transition';
+                itemEl.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-yellow-600/20 rounded-full flex items-center justify-center">
+                                <i class="fas fa-receipt text-yellow-400 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-lg">Refund Request</h3>
+                                <p class="text-gray-400 text-sm">Customer #${item.customer_id} • Thread: ${threadId.substring(0, 8)}...</p>
+                                <p class="text-gray-500 text-xs mt-1">${new Date().toLocaleTimeString()}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="handleApproval('${threadId}', ${item.customer_id}, true)" 
+                                    class="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold transition flex items-center space-x-2">
+                                <i class="fas fa-check"></i>
+                                <span>Approve</span>
+                            </button>
+                            <button onclick="handleApproval('${threadId}', ${item.customer_id}, false)" 
+                                    class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold transition flex items-center space-x-2">
+                                <i class="fas fa-times"></i>
+                                <span>Reject</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                pendingList.insertBefore(itemEl, emptyState);
+            });
+        }
+
+        async function handleApproval(threadId, customerId, approved) {
+            const endpoint = approved ? `/approve/${threadId}` : `/reject/${threadId}`;
+            
+            try {
+                const response = await fetch(`${endpoint}?customer_id=${customerId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    // Remove from pending
+                    pendingApprovals.delete(threadId);
+                    renderPendingList();
+                    pendingCountEl.textContent = pendingApprovals.size;
+
+                    // Update counts
+                    if (approved) {
+                        approvedCount++;
+                        approvedCountEl.textContent = approvedCount;
+                        addActivityLog(`Approved refund for Customer #${customerId}`, 'success');
+                    } else {
+                        rejectedCount++;
+                        rejectedCountEl.textContent = rejectedCount;
+                        addActivityLog(`Rejected refund for Customer #${customerId}`, 'error');
+                    }
+
+                    // Remove the element with animation
+                    const el = document.getElementById(`pending-${threadId}`);
+                    if (el) {
+                        el.style.transition = 'all 0.3s';
+                        el.style.opacity = '0';
+                        el.style.transform = 'translateX(100px)';
+                        setTimeout(() => el.remove(), 300);
+                    }
+                }
+            } catch (error) {
+                console.error('Error handling approval:', error);
+                addActivityLog(`Error processing request: ${error.message}`, 'error');
+            }
+        }
+
+        function addActivityLog(message, type = 'info') {
+            const logEl = document.createElement('div');
+            logEl.className = 'flex items-center space-x-3 text-sm';
+            
+            const iconClass = type === 'success' ? 'fa-check-circle text-green-400' 
+                            : type === 'error' ? 'fa-times-circle text-red-400'
+                            : type === 'warning' ? 'fa-exclamation-circle text-yellow-400'
+                            : 'fa-info-circle text-blue-400';
+            
+            logEl.innerHTML = `
+                <i class="fas ${iconClass}"></i>
+                <span class="text-gray-300">${message}</span>
+                <span class="text-gray-500 ml-auto">${new Date().toLocaleTimeString()}</span>
+            `;
+            
+            // Remove placeholder if exists
+            if (activityLog.children.length === 1 && activityLog.children[0].tagName === 'P') {
+                activityLog.innerHTML = '';
+            }
+            
+            activityLog.insertBefore(logEl, activityLog.firstChild);
+            
+            // Keep only last 20 entries
+            while (activityLog.children.length > 20) {
+                activityLog.removeChild(activityLog.lastChild);
+            }
+        }
+
+        // Poll every 2 seconds
+        setInterval(fetchPendingApprovals, 2000);
+        fetchPendingApprovals();
+
+        // Initial activity
+        addActivityLog('Supervisor dashboard loaded', 'info');
+    </script>
+</body>
+</html>
