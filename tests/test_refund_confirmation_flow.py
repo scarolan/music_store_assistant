@@ -26,9 +26,9 @@ class TestRefundConfirmationFlow:
         checkpointer = MemorySaver()
         return create_graph(checkpointer=checkpointer)
     
-    def test_yes_confirmation_triggers_refund_tool(self, graph):
+    def test_yes_confirmation_triggers_refund_tool(self, graph, test_config_with_thread):
         """When user confirms 'yes' after refund prompt, the refund tool should be called."""
-        config = {"configurable": {"thread_id": "test-refund-1", "customer_id": 1}}
+        config = test_config_with_thread("test-refund-1")
         
         # First turn: User asks for refund
         # Note: customer_id must be in the state, not just config
@@ -87,9 +87,9 @@ class TestRefundConfirmationFlow:
         assert refund_tool_called or hitl_triggered, \
             "After user confirms 'yes', the refund tool should be called or HITL should trigger"
     
-    def test_support_rep_has_conversation_context(self, graph):
+    def test_support_rep_has_conversation_context(self, graph, test_config_with_thread):
         """The support rep should see the full conversation history including the confirmation."""
-        config = {"configurable": {"thread_id": "test-refund-2", "customer_id": 1}}
+        config = test_config_with_thread("test-refund-2")
         
         # Turn 1: Ask for refund
         graph.invoke(
@@ -129,9 +129,9 @@ class TestSupportRepToolCalling:
         checkpointer = MemorySaver()
         return create_graph(checkpointer=checkpointer)
     
-    def test_support_rep_calls_refund_after_confirmation(self, graph):
+    def test_support_rep_calls_refund_after_confirmation(self, graph, test_config_with_thread):
         """Support rep should call process_refund when user confirms."""
-        config = {"configurable": {"thread_id": "test-refund-3", "customer_id": 1}}
+        config = test_config_with_thread("test-refund-3")
         
         # Simulate a conversation where we've already discussed the invoice
         # and now the user is confirming
@@ -168,9 +168,9 @@ class TestSupportRepToolCalling:
         assert refund_called or hitl_triggered, \
             "Support rep should call process_refund when user confirms"
     
-    def test_get_invoice_uses_correct_ids(self, graph):
+    def test_get_invoice_uses_correct_ids(self, graph, test_config_with_thread):
         """Verify get_invoice is called with customer_id (not invoice_id)."""
-        config = {"configurable": {"thread_id": "test-invoice-lookup", "customer_id": 1}}
+        config = test_config_with_thread("test-invoice-lookup")
         
         result = graph.invoke(
             {

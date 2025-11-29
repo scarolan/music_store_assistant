@@ -222,17 +222,17 @@ def get_music_expert_model() -> BaseChatModel:
     if model_choice == "gemini":
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
-            print("🎵 Music Expert: Using Gemini (gemini-3-pro-preview)")
+            print("🎵 Music Expert: Using Gemini (gemini-2.0-flash)")
             return ChatGoogleGenerativeAI(
-                model="gemini-3-pro-preview",
+                model="gemini-2.0-flash",
                 temperature=0.7,  # Slightly creative for music recommendations
             )
         except ImportError:
             print("⚠️ langchain-google-genai not installed, falling back to OpenAI")
-            return ChatOpenAI(model="gpt-4o", temperature=0.7)
+            return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
     else:
-        print("🎵 Music Expert: Using OpenAI (gpt-4o)")
-        return ChatOpenAI(model="gpt-4o", temperature=0.7)
+        print("🎵 Music Expert: Using OpenAI (gpt-4o-mini)")
+        return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
 
 
 def create_graph(checkpointer: BaseCheckpointSaver | None = None):

@@ -59,16 +59,15 @@ class TestRouting:
     """Tests for supervisor routing logic."""
     
     @pytest.mark.integration
-    def test_router_selects_music_for_music_query(self):
+    def test_router_selects_music_for_music_query(self, test_config):
         """Supervisor should route music queries to music_expert."""
         from src.graph import create_graph
         
         graph = create_graph()
-        config = {"configurable": {"customer_id": 1}}
         
         result = graph.invoke(
             {"messages": [HumanMessage(content="What albums does AC/DC have?")]},
-            config
+            test_config
         )
         
         # Should have received a response about music
@@ -77,16 +76,15 @@ class TestRouting:
         assert len(result["messages"]) > 1
 
     @pytest.mark.integration
-    def test_router_selects_support_for_account_query(self):
+    def test_router_selects_support_for_account_query(self, test_config):
         """Supervisor should route account queries to support_rep."""
         from src.graph import create_graph
         
         graph = create_graph()
-        config = {"configurable": {"customer_id": 1}}
         
         result = graph.invoke(
             {"messages": [HumanMessage(content="What is my email address on file?")]},
-            config
+            test_config
         )
         
         assert result is not None
@@ -97,14 +95,14 @@ class TestHITL:
     """Tests for Human-in-the-Loop interrupts."""
     
     @pytest.mark.integration
-    def test_hitl_interrupts_on_refund_request(self):
+    def test_hitl_interrupts_on_refund_request(self, test_config_with_thread):
         """Graph should interrupt before processing refund for human approval."""
         from src.graph import create_graph
         from langgraph.checkpoint.memory import MemorySaver
         
         checkpointer = MemorySaver()
         graph = create_graph(checkpointer=checkpointer)
-        config = {"configurable": {"thread_id": "test-hitl", "customer_id": 1}}
+        config = test_config_with_thread("test-hitl")
         
         # First message: request a refund
         result = graph.invoke(

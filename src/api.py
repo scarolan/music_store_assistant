@@ -1,5 +1,6 @@
 """FastAPI backend for the Music Store Assistant chat interface."""
 
+import os
 import uuid
 from typing import Optional
 
@@ -43,6 +44,26 @@ pending_approvals: dict[str, dict] = {}
 
 # Store the last response for rejected threads (since we don't resume the graph)
 rejected_responses: dict[str, str] = {}
+
+
+def build_config(thread_id: str, customer_id: int) -> dict:
+    """Build a config dict for graph invocation.
+    
+    Adds 'test' tag when LANGSMITH_TEST_MODE environment variable is set.
+    This allows filtering test traces from production in LangSmith.
+    """
+    config = {
+        "configurable": {
+            "thread_id": thread_id,
+            "customer_id": customer_id
+        }
+    }
+    
+    # Add test tag when in test mode
+    if os.getenv("LANGSMITH_TEST_MODE"):
+        config["tags"] = ["test"]
+    
+    return config
 
 
 # --- Request/Response Models ---
@@ -113,7 +134,7 @@ def check_pending_approval(thread_id: str, customer_id: int) -> tuple[bool, Opti
 
 def check_graph_interrupted(thread_id: str, customer_id: int) -> tuple[bool, Optional[str]]:
     """Check if the graph is currently interrupted (after invoke)."""
-    config = {"configurable": {"thread_id": thread_id, "customer_id": customer_id}}
+    config = build_config(thread_id, customer_id)
     state = graph.get_state(config)
     
     if state and state.next:
@@ -136,12 +157,7 @@ def chat(request: ChatRequest):
     # Generate thread_id if not provided
     thread_id = request.thread_id or str(uuid.uuid4())
     
-    config = {
-        "configurable": {
-            "thread_id": thread_id,
-            "customer_id": request.customer_id
-        }
-    }
+    config = build_config(thread_id, request.customer_id)
     
     # Check if there's already a pending approval for this thread
     pending, tool = check_pending_approval(thread_id, request.customer_id)
@@ -195,12 +211,7 @@ def chat(request: ChatRequest):
 @app.post("/approve/{thread_id}", response_model=ApproveResponse)
 def approve_action(thread_id: str, customer_id: int = 1):
     """Approve a pending HITL action and continue the graph."""
-    config = {
-        "configurable": {
-            "thread_id": thread_id,
-            "customer_id": customer_id
-        }
-    }
+    config = build_config(thread_id, customer_id)
     
     # Check if there's actually something pending
     pending, _ = check_pending_approval(thread_id, customer_id)
@@ -230,12 +241,7 @@ def approve_action(thread_id: str, customer_id: int = 1):
 @app.post("/reject/{thread_id}", response_model=ApproveResponse)
 def reject_action(thread_id: str, customer_id: int = 1):
     """Reject a pending HITL action."""
-    config = {
-        "configurable": {
-            "thread_id": thread_id,
-            "customer_id": customer_id
-        }
-    }
+    config = build_config(thread_id, customer_id)
     
     # Check if there's actually something pending
     pending, _ = check_pending_approval(thread_id, customer_id)
@@ -289,7 +295,7 @@ def get_thread_status(thread_id: str, customer_id: int = 1):
         }
     
     # Check the graph state
-    config = {"configurable": {"thread_id": thread_id, "customer_id": customer_id}}
+    config = build_config(thread_id, customer_id)
     state = graph.get_state(config)
     
     # If graph has no state, thread doesn't exist
