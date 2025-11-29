@@ -1,5 +1,7 @@
 # Music Store Assistant - Algorhythm Customer Support Bot
 
+[![CI](https://github.com/scarolan/music_store_assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/scarolan/music_store_assistant/actions/workflows/ci.yml)
+
 A LangGraph-based customer support chatbot demonstrating the Supervisor/Router pattern with Human-in-the-Loop (HITL) for sensitive operations.
 
 ## Architecture
