@@ -74,54 +74,54 @@ class TestToolFunctionality:
     """Integration tests for tool database queries."""
 
     @pytest.mark.integration
-    def test_get_albums_by_artist_returns_results(self):
+    def test_get_albums_by_artist_returns_results(self, test_config):
         """get_albums_by_artist should return album data from the database."""
         from src.tools.music import get_albums_by_artist
 
         # AC/DC is a known artist in Chinook
-        result = get_albums_by_artist.invoke({"artist": "AC/DC"})
+        result = get_albums_by_artist.invoke({"artist": "AC/DC"}, config=test_config)
 
         assert result is not None
         assert "AC/DC" in result or "acdc" in result.lower()
 
     @pytest.mark.integration
-    def test_get_tracks_by_artist_returns_results(self):
+    def test_get_tracks_by_artist_returns_results(self, test_config):
         """get_tracks_by_artist should return track data from the database."""
         from src.tools.music import get_tracks_by_artist
 
-        result = get_tracks_by_artist.invoke({"artist": "AC/DC"})
+        result = get_tracks_by_artist.invoke({"artist": "AC/DC"}, config=test_config)
 
         assert result is not None
         assert len(result) > 0
 
     @pytest.mark.integration
-    def test_check_for_songs_returns_results(self):
+    def test_check_for_songs_returns_results(self, test_config):
         """check_for_songs should find songs by title."""
         from src.tools.music import check_for_songs
 
         # "For Those About To Rock" is a known track in Chinook
-        result = check_for_songs.invoke({"song_title": "Rock"})
+        result = check_for_songs.invoke({"song_title": "Rock"}, config=test_config)
 
         assert result is not None
         assert len(result) > 0
 
     @pytest.mark.integration
-    def test_get_artists_by_genre_returns_rock_artists(self):
+    def test_get_artists_by_genre_returns_rock_artists(self, test_config):
         """get_artists_by_genre should return artists for a given genre."""
         from src.tools.music import get_artists_by_genre
 
-        result = get_artists_by_genre.invoke({"genre": "Rock"})
+        result = get_artists_by_genre.invoke({"genre": "Rock"}, config=test_config)
 
         assert result is not None
         # Should contain known rock artists from Chinook
         assert "Led Zeppelin" in result or "U2" in result or "Deep Purple" in result
 
     @pytest.mark.integration
-    def test_get_artists_by_genre_returns_metal_artists(self):
+    def test_get_artists_by_genre_returns_metal_artists(self, test_config):
         """get_artists_by_genre should return metal artists."""
         from src.tools.music import get_artists_by_genre
 
-        result = get_artists_by_genre.invoke({"genre": "Metal"})
+        result = get_artists_by_genre.invoke({"genre": "Metal"}, config=test_config)
 
         assert result is not None
         # Should contain known metal artists from Chinook
@@ -132,11 +132,11 @@ class TestToolFunctionality:
         )
 
     @pytest.mark.integration
-    def test_list_genres_returns_all_genres(self):
+    def test_list_genres_returns_all_genres(self, test_config):
         """list_genres should return all available genres."""
         from src.tools.music import list_genres
 
-        result = list_genres.invoke({})
+        result = list_genres.invoke({}, config=test_config)
 
         assert result is not None
         assert "Rock" in result

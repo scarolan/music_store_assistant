@@ -47,32 +47,32 @@ class TestToolFunctionality:
     """Integration tests for tool database queries."""
 
     @pytest.mark.integration
-    def test_get_customer_info_returns_customer_data(self):
+    def test_get_customer_info_returns_customer_data(self, test_config):
         """get_customer_info should return customer details."""
         from src.tools.support import get_customer_info
 
         # Customer ID 1 exists in Chinook
-        result = get_customer_info.invoke({"customer_id": 1})
+        result = get_customer_info.invoke({"customer_id": 1}, config=test_config)
 
         assert result is not None
         assert "1" in str(result)  # Customer ID should be in result
 
     @pytest.mark.integration
-    def test_get_invoice_returns_invoice_data(self):
+    def test_get_invoice_returns_invoice_data(self, test_config):
         """get_invoice should return invoice details for a customer."""
         from src.tools.support import get_invoice
 
         # Customer 1 has invoices in Chinook
-        result = get_invoice.invoke({"customer_id": 1})
+        result = get_invoice.invoke({"customer_id": 1}, config=test_config)
 
         assert result is not None
 
     @pytest.mark.integration
-    def test_process_refund_returns_confirmation(self):
+    def test_process_refund_returns_confirmation(self, test_config):
         """process_refund should return a confirmation message."""
         from src.tools.support import process_refund
 
-        result = process_refund.invoke({"invoice_id": 1})
+        result = process_refund.invoke({"invoice_id": 1}, config=test_config)
 
         assert result is not None
         assert "refund" in result.lower() or "initiated" in result.lower()
