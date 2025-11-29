@@ -325,6 +325,12 @@ def serve_admin():
     return FileResponse("static/admin.html")
 
 
+@app.get("/favicon.ico")
+def serve_favicon():
+    """Serve the favicon."""
+    return FileResponse("static/favicon.ico")
+
+
 # Serve static files (will add the HTML frontend here)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
