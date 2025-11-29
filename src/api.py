@@ -51,13 +51,25 @@ def build_config(thread_id: str, customer_id: int) -> dict:
     """Build a config dict for graph invocation.
 
     Adds 'test' tag when LANGSMITH_TEST_MODE environment variable is set.
+    Also includes any tags from LANGCHAIN_TAGS env var (comma-separated),
+    such as 'ci-cd' when running in GitHub Actions.
     This allows filtering test traces from production in LangSmith.
     """
     config = {"configurable": {"thread_id": thread_id, "customer_id": customer_id}}
 
+    tags = []
+
     # Add test tag when in test mode
     if os.getenv("LANGSMITH_TEST_MODE"):
-        config["tags"] = ["test"]
+        tags.append("test")
+
+    # Add additional tags from environment (e.g., 'ci-cd' from GitHub Actions)
+    extra_tags = os.getenv("LANGCHAIN_TAGS", "")
+    if extra_tags:
+        tags.extend(tag.strip() for tag in extra_tags.split(",") if tag.strip())
+
+    if tags:
+        config["tags"] = tags
 
     return config
 

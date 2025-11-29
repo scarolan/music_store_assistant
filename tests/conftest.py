@@ -5,6 +5,22 @@ import os
 from pathlib import Path
 
 
+def get_langsmith_tags() -> list[str]:
+    """Build list of tags for LangSmith tracing.
+
+    Always includes 'test'. Also includes any tags from LANGCHAIN_TAGS env var
+    (comma-separated), such as 'ci-cd' when running in GitHub Actions.
+    """
+    tags = ["test"]
+
+    # Add additional tags from environment (e.g., 'ci-cd' from GitHub Actions)
+    extra_tags = os.getenv("LANGCHAIN_TAGS", "")
+    if extra_tags:
+        tags.extend(tag.strip() for tag in extra_tags.split(",") if tag.strip())
+
+    return tags
+
+
 def pytest_configure(config):
     """Register custom markers and set test mode for LangSmith tagging."""
     config.addinivalue_line(
@@ -31,17 +47,21 @@ def load_env():
 
 @pytest.fixture
 def test_config():
-    """Provide a config dict with 'test' tag for LangSmith filtering.
+    """Provide a config dict with appropriate tags for LangSmith filtering.
+
+    Always includes 'test' tag. Includes 'ci-cd' when running in GitHub Actions.
 
     Usage in tests:
         result = graph.invoke({"messages": [...]}, test_config)
     """
-    return {"configurable": {"customer_id": 1}, "tags": ["test"]}
+    return {"configurable": {"customer_id": 1}, "tags": get_langsmith_tags()}
 
 
 @pytest.fixture
 def test_config_with_thread():
     """Factory fixture to create test config with a specific thread_id.
+
+    Always includes 'test' tag. Includes 'ci-cd' when running in GitHub Actions.
 
     Usage in tests:
         config = test_config_with_thread("my-thread-id")
@@ -51,7 +71,7 @@ def test_config_with_thread():
     def _make_config(thread_id: str, customer_id: int = 1):
         return {
             "configurable": {"thread_id": thread_id, "customer_id": customer_id},
-            "tags": ["test"],
+            "tags": get_langsmith_tags(),
         }
 
     return _make_config
