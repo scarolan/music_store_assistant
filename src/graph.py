@@ -22,12 +22,12 @@ from pydantic import BaseModel, Field
 
 from src.state import State
 from src.tools.music import MUSIC_TOOLS
-from src.tools.support import SUPPORT_TOOLS, SAFE_SUPPORT_TOOLS, HITL_SUPPORT_TOOLS, HITL_TOOLS, get_customer_info, get_invoice, process_refund
-
-
-# Separate tools into safe and HITL-requiring
-SAFE_SUPPORT_TOOLS = [get_customer_info, get_invoice]
-HITL_SUPPORT_TOOLS = [process_refund]
+from src.tools.support import (
+    SUPPORT_TOOLS,
+    SAFE_SUPPORT_TOOLS,
+    HITL_SUPPORT_TOOLS,
+    HITL_TOOLS,
+)
 
 
 # --- Prompts ---
@@ -95,8 +95,10 @@ Be helpful and empathetic, especially when handling complaints or refund request
 
 # --- Router Schema ---
 
+
 class RouteDecision(BaseModel):
     """Decision on how to route the customer's request."""
+
     reasoning: str = Field(description="Brief explanation of why this route was chosen")
     route: Literal["music", "support"] = Field(
         description="Where to route: 'music' for catalog/artist queries, 'support' for account/invoices/refunds/general"
@@ -105,68 +107,70 @@ class RouteDecision(BaseModel):
 
 # --- Node Functions ---
 
+
 def create_supervisor_node(model: ChatOpenAI):
     """Create the supervisor node that routes requests."""
-    
+
     def supervisor(state: State) -> dict:
         """Route the user's request to the appropriate worker."""
         messages = [SystemMessage(content=SUPERVISOR_PROMPT)] + state["messages"]
-        
+
         # Use structured output for routing decision
         router_model = model.with_structured_output(RouteDecision)
         decision = router_model.invoke(messages)
-        
+
         # Add a routing note (will be skipped in output extraction)
         routing_msg = AIMessage(
             content=f"[Routing to {decision.route}: {decision.reasoning}]",
-            name="supervisor"
+            name="supervisor",
         )
-        
+
         return {"messages": [routing_msg], "route": decision.route}
-    
+
     return supervisor
 
 
 def create_music_expert_node(model: BaseChatModel):
     """Create the music expert node.
-    
+
     Args:
         model: The LLM to use for music queries (can be OpenAI or Gemini).
     """
     music_model = model.bind_tools(MUSIC_TOOLS)
-    
+
     def music_expert(state: State) -> dict:
         """Handle music catalog queries."""
         messages = [SystemMessage(content=MUSIC_EXPERT_PROMPT)] + state["messages"]
         response = music_model.invoke(messages)
         return {"messages": [response]}
-    
+
     return music_expert
 
 
 def create_support_rep_node(model: ChatOpenAI):
     """Create the support rep node."""
     support_model = model.bind_tools(SUPPORT_TOOLS)
-    
+
     def support_rep(state: State) -> dict:
         """Handle account and support queries."""
         # Inject customer context into the prompt
         customer_id = state.get("customer_id", "unknown")
         context_prompt = f"{SUPPORT_REP_PROMPT}\n\nCurrent customer ID: {customer_id}"
-        
+
         messages = [SystemMessage(content=context_prompt)] + state["messages"]
         response = support_model.invoke(messages)
         return {"messages": [response]}
-    
+
     return support_rep
 
 
 # --- Routing Logic ---
 
+
 def route_supervisor(state: State) -> Literal["music_expert", "support_rep"]:
     """Route from supervisor to the appropriate worker."""
     route = state.get("route", "support")  # Default to support
-    
+
     if route == "music":
         return "music_expert"
     else:
@@ -176,16 +180,18 @@ def route_supervisor(state: State) -> Literal["music_expert", "support_rep"]:
 def should_continue_music(state: State) -> Literal["music_tools", "__end__"]:
     """Check if music expert needs to call tools or is done."""
     last_message = state["messages"][-1]
-    
+
     if hasattr(last_message, "tool_calls") and last_message.tool_calls:
         return "music_tools"
     return END
 
 
-def should_continue_support(state: State) -> Literal["support_tools", "support_hitl", "__end__"]:
+def should_continue_support(
+    state: State,
+) -> Literal["support_tools", "support_hitl", "__end__"]:
     """Check if support rep needs tools, HITL approval, or is done."""
     last_message = state["messages"][-1]
-    
+
     if hasattr(last_message, "tool_calls") and last_message.tool_calls:
         # Check if any tool call requires HITL
         for tool_call in last_message.tool_calls:
@@ -204,24 +210,26 @@ def route_after_tools(state: State) -> Literal["music_expert", "support_rep"]:
                 return "music_expert"
             elif msg.name == "support_rep":
                 return "support_rep"
-    
+
     # Default based on tool type in last tool message
     return "support_rep"
 
 
 # --- Graph Factory ---
 
+
 def get_music_expert_model() -> BaseChatModel:
     """Get the model for the music expert based on environment config.
-    
+
     Set MUSIC_EXPERT_MODEL=gemini to use Google Gemini.
     Defaults to OpenAI GPT-4o.
     """
     model_choice = os.getenv("MUSIC_EXPERT_MODEL", "openai").lower()
-    
+
     if model_choice == "gemini":
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
+
             print("🎵 Music Expert: Using Gemini (gemini-2.0-flash)")
             return ChatGoogleGenerativeAI(
                 model="gemini-2.0-flash",
@@ -237,57 +245,51 @@ def get_music_expert_model() -> BaseChatModel:
 
 def create_graph(checkpointer: BaseCheckpointSaver | None = None):
     """Create and compile the customer support graph.
-    
+
     Args:
         checkpointer: Optional checkpointer for persistence and HITL support.
-        
+
     Returns:
         Compiled StateGraph ready for invocation.
-    
+
     Environment Variables:
         MUSIC_EXPERT_MODEL: Set to "gemini" to use Gemini for music queries.
     """
     # Initialize models
     # Supervisor and Support Rep always use GPT-4o for reliability
     openai_model = ChatOpenAI(model="gpt-4o", temperature=0, streaming=True)
-    
+
     # Music Expert can use Gemini or OpenAI based on config
     music_model = get_music_expert_model()
-    
+
     # Create the graph
     builder = StateGraph(State)
-    
+
     # Add nodes
     builder.add_node("supervisor", create_supervisor_node(openai_model))
     builder.add_node("music_expert", create_music_expert_node(music_model))
     builder.add_node("support_rep", create_support_rep_node(openai_model))
     builder.add_node("music_tools", ToolNode(MUSIC_TOOLS))
     builder.add_node("support_tools", ToolNode(SAFE_SUPPORT_TOOLS))
-    builder.add_node("refund_tools", ToolNode(HITL_SUPPORT_TOOLS))  # Separate node for HITL
-    
+    builder.add_node(
+        "refund_tools", ToolNode(HITL_SUPPORT_TOOLS)
+    )  # Separate node for HITL
+
     # Set entry point
     builder.set_entry_point("supervisor")
-    
+
     # Add edges from supervisor (always routes to a worker, never ends directly)
     builder.add_conditional_edges(
         "supervisor",
         route_supervisor,
-        {
-            "music_expert": "music_expert",
-            "support_rep": "support_rep"
-        }
+        {"music_expert": "music_expert", "support_rep": "support_rep"},
     )
-    
+
     # Add edges from music expert
     builder.add_conditional_edges(
-        "music_expert",
-        should_continue_music,
-        {
-            "music_tools": "music_tools",
-            END: END
-        }
+        "music_expert", should_continue_music, {"music_tools": "music_tools", END: END}
     )
-    
+
     # Add edges from support rep (with HITL check)
     builder.add_conditional_edges(
         "support_rep",
@@ -295,20 +297,22 @@ def create_graph(checkpointer: BaseCheckpointSaver | None = None):
         {
             "support_tools": "support_tools",
             "support_hitl": "refund_tools",  # Route to separate HITL node
-            END: END
-        }
+            END: END,
+        },
     )
-    
+
     # Add edges from tools back to workers
     builder.add_edge("music_tools", "music_expert")
     builder.add_edge("support_tools", "support_rep")
-    builder.add_edge("refund_tools", "support_rep")  # Refund tools also return to support_rep
-    
+    builder.add_edge(
+        "refund_tools", "support_rep"
+    )  # Refund tools also return to support_rep
+
     # Compile with optional checkpointer and HITL interrupt
     compile_kwargs = {}
     if checkpointer:
         compile_kwargs["checkpointer"] = checkpointer
         # Only interrupt before refund_tools, not all support tools
         compile_kwargs["interrupt_before"] = ["refund_tools"]
-    
+
     return builder.compile(**compile_kwargs)

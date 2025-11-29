@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 def client():
     """Create a test client for the API."""
     from src.api import app
+
     return TestClient(app)
 
 
@@ -27,10 +28,13 @@ class TestChatEndpoint:
     @pytest.mark.integration
     def test_chat_returns_response(self, client: TestClient):
         """The /chat endpoint should return a response with content."""
-        response = client.post("/chat", json={
-            "message": "What albums does AC/DC have?",
-            "thread_id": "test-music-123"
-        })
+        response = client.post(
+            "/chat",
+            json={
+                "message": "What albums does AC/DC have?",
+                "thread_id": "test-music-123",
+            },
+        )
         assert response.status_code == 200
         data = response.json()
         assert "response" in data
@@ -39,10 +43,13 @@ class TestChatEndpoint:
     @pytest.mark.integration
     def test_refund_triggers_hitl(self, client: TestClient):
         """Refund requests should trigger HITL and return requires_approval."""
-        response = client.post("/chat", json={
-            "message": "I want a refund for invoice 5",
-            "thread_id": "test-refund-456"
-        })
+        response = client.post(
+            "/chat",
+            json={
+                "message": "I want a refund for invoice 5",
+                "thread_id": "test-refund-456",
+            },
+        )
         assert response.status_code == 200
         data = response.json()
         # Should indicate approval is needed
@@ -61,22 +68,26 @@ class TestApproveEndpoint:
     def test_approve_continues_graph(self, client: TestClient):
         """Approving should continue the interrupted graph."""
         # First trigger HITL - need to ask for refund AND confirm
-        r1 = client.post("/chat", json={
-            "message": "I want a refund for invoice 143",
-            "thread_id": "test-approve-789",
-            "customer_id": 1
-        })
-        
+        client.post(
+            "/chat",
+            json={
+                "message": "I want a refund for invoice 143",
+                "thread_id": "test-approve-789",
+                "customer_id": 1,
+            },
+        )
+
         # Confirm the refund
-        r2 = client.post("/chat", json={
-            "message": "yes",
-            "thread_id": "test-approve-789",
-            "customer_id": 1
-        })
-        
+        r2 = client.post(
+            "/chat",
+            json={"message": "yes", "thread_id": "test-approve-789", "customer_id": 1},
+        )
+
         # Verify HITL triggered
-        assert r2.json().get("requires_approval") == True, "Should require approval after confirmation"
-        
+        assert r2.json().get("requires_approval"), (
+            "Should require approval after confirmation"
+        )
+
         # Then approve
         response = client.post("/approve/test-approve-789?customer_id=1")
         assert response.status_code == 200

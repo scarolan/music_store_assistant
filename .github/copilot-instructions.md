@@ -14,6 +14,10 @@ We are building a **Customer Support Bot** for a fictional music store called Al
 * **Database:** SQLite (`Chinook.db`)
 * **Testing:** `pytest` (Strict TDD)
 * **Observability:** LangSmith (Must be configured via `.env`)
+* **Package Manager:** `uv` (Always use `uv run` to execute commands)
+* **Virtual Environment:** Always use `.venv` in the project root. **NEVER use system Python.**
+  * Run commands with: `uv run pytest`, `uv run python`, etc.
+  * Or activate first: `source .venv/bin/activate`
 
 ## 3. Development Methodology: TDD (Non-Negotiable)
 We follow a strict Test-Driven Development cycle. **Do not write implementation code until a test exists.**

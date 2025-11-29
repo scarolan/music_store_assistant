@@ -1,75 +1,75 @@
 """Tests for the LangGraph supervisor and routing logic."""
 
 import pytest
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage
 
 
 class TestGraphCreation:
     """Tests for graph factory and structure."""
-    
+
     def test_graph_can_be_created(self):
         """The graph factory function should return a compiled graph."""
         from src.graph import create_graph
-        
+
         graph = create_graph()
         assert graph is not None
 
     def test_graph_has_supervisor_node(self):
         """Graph should have a supervisor node for routing."""
         from src.graph import create_graph
-        
+
         graph = create_graph()
         nodes = list(graph.nodes.keys())
-        
+
         assert "supervisor" in nodes, f"Expected 'supervisor' node, got: {nodes}"
 
     def test_graph_has_music_expert_node(self):
         """Graph should have a music_expert node."""
         from src.graph import create_graph
-        
+
         graph = create_graph()
         nodes = list(graph.nodes.keys())
-        
+
         assert "music_expert" in nodes, f"Expected 'music_expert' node, got: {nodes}"
 
     def test_graph_has_support_rep_node(self):
         """Graph should have a support_rep node."""
         from src.graph import create_graph
-        
+
         graph = create_graph()
         nodes = list(graph.nodes.keys())
-        
+
         assert "support_rep" in nodes, f"Expected 'support_rep' node, got: {nodes}"
 
     def test_graph_accepts_customer_id_in_config(self):
         """Graph should accept customer_id via configurable parameters."""
         from src.graph import create_graph
-        
+
+        # Verify graph can be created (implicitly accepts config with customer_id)
         graph = create_graph()
-        
-        # This should not raise - customer_id is passed via config
+        assert graph is not None
+
+        # Verify the config structure that will be used
         config = {"configurable": {"customer_id": 1}}
-        
-        # Just verify the config structure is accepted
         assert "configurable" in config
         assert "customer_id" in config["configurable"]
 
 
 class TestRouting:
     """Tests for supervisor routing logic."""
-    
+
     @pytest.mark.integration
     def test_router_selects_music_for_music_query(self, test_config):
         """Supervisor should route music queries to music_expert."""
         from src.graph import create_graph
-        
+
         graph = create_graph()
-        
+
         result = graph.invoke(
             {"messages": [HumanMessage(content="What albums does AC/DC have?")]},
-            test_config
+            test_config,
         )
-        
+
         # Should have received a response about music
         assert result is not None
         assert "messages" in result
@@ -79,37 +79,37 @@ class TestRouting:
     def test_router_selects_support_for_account_query(self, test_config):
         """Supervisor should route account queries to support_rep."""
         from src.graph import create_graph
-        
+
         graph = create_graph()
-        
+
         result = graph.invoke(
             {"messages": [HumanMessage(content="What is my email address on file?")]},
-            test_config
+            test_config,
         )
-        
+
         assert result is not None
         assert "messages" in result
 
 
 class TestHITL:
     """Tests for Human-in-the-Loop interrupts."""
-    
+
     @pytest.mark.integration
     def test_hitl_interrupts_on_refund_request(self, test_config_with_thread):
         """Graph should interrupt before processing refund for human approval."""
         from src.graph import create_graph
         from langgraph.checkpoint.memory import MemorySaver
-        
+
         checkpointer = MemorySaver()
         graph = create_graph(checkpointer=checkpointer)
         config = test_config_with_thread("test-hitl")
-        
+
         # First message: request a refund
         result = graph.invoke(
             {"messages": [HumanMessage(content="I want a refund for invoice 98")]},
-            config
+            config,
         )
-        
+
         # The graph should have produced some response
         assert result is not None
         assert "messages" in result
