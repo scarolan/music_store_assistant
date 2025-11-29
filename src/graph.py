@@ -256,8 +256,11 @@ def create_graph(checkpointer: BaseCheckpointSaver | None = None):
         MUSIC_EXPERT_MODEL: Set to "gemini" to use Gemini for music queries.
     """
     # Initialize models
-    # Supervisor and Support Rep always use GPT-4o for reliability
-    openai_model = ChatOpenAI(model="gpt-4o", temperature=0, streaming=True)
+    # Supervisor uses cheaper model - routing is simple classification
+    supervisor_model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+    # Support Rep uses GPT-4o for complex customer interactions
+    support_model = ChatOpenAI(model="gpt-4o", temperature=0, streaming=True)
 
     # Music Expert can use Gemini or OpenAI based on config
     music_model = get_music_expert_model()
@@ -266,9 +269,9 @@ def create_graph(checkpointer: BaseCheckpointSaver | None = None):
     builder = StateGraph(State)
 
     # Add nodes
-    builder.add_node("supervisor", create_supervisor_node(openai_model))
+    builder.add_node("supervisor", create_supervisor_node(supervisor_model))
     builder.add_node("music_expert", create_music_expert_node(music_model))
-    builder.add_node("support_rep", create_support_rep_node(openai_model))
+    builder.add_node("support_rep", create_support_rep_node(support_model))
     builder.add_node("music_tools", ToolNode(MUSIC_TOOLS))
     builder.add_node("support_tools", ToolNode(SAFE_SUPPORT_TOOLS))
     builder.add_node(

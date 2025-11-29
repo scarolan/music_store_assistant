@@ -11,7 +11,7 @@ flowchart TD
     Start((Start)) --> supervisor
 
     subgraph Routing["🎯 Supervisor Router"]
-        supervisor{{"Supervisor<br/>(GPT-4o)"}}
+        supervisor{{"Supervisor<br/>(GPT-4o-mini)"}}
     end
 
     supervisor -->|"music query"| music_expert
@@ -57,7 +57,7 @@ flowchart TD
 
 | Component | Model | Purpose |
 |-----------|-------|---------|
-| **Supervisor** | GPT-4o | Routes requests to Music Expert or Support Rep |
+| **Supervisor** | GPT-4o-mini | Routes requests to Music Expert or Support Rep |
 | **Music Expert** | Gemini 2.0 Flash (configurable) | Catalog queries - albums, tracks, artists, genres |
 | **Support Rep** | GPT-4o | Account info, invoices, refunds |
 | **HITL Gate** | — | Requires human approval for refunds |
