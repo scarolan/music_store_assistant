@@ -31,7 +31,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --all-extras --dev
 
       - name: Check formatting
         run: uv run ruff format src/ tests/ --check
@@ -51,7 +51,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --all-extras --dev
 
       - name: Run linter
         run: uv run ruff check src/ tests/
@@ -72,7 +72,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --all-extras --dev
 
       - name: Run tests
         run: uv run pytest tests/ -v --tb=short
