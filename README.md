@@ -48,9 +48,9 @@ flowchart TD
     style music_expert fill:#50c878,stroke:#2d7a4a,color:#fff
     style support_rep fill:#f5a623,stroke:#c77d0a,color:#fff
     style hitl fill:#e74c3c,stroke:#a93226,color:#fff
-    style music_tools fill:#e8f5e9,stroke:#81c784
-    style support_tools fill:#fff3e0,stroke:#ffb74d
-    style refund_tools fill:#ffebee,stroke:#ef5350
+    style music_tools fill:#e8f5e9,stroke:#81c784,color:#1a3d1a
+    style support_tools fill:#fff3e0,stroke:#ffb74d,color:#5d4e37
+    style refund_tools fill:#ffebee,stroke:#ef5350,color:#7a1f1f
 ```
 
 ### Flow Summary
