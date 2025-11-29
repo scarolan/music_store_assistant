@@ -18,7 +18,7 @@ flowchart TD
     supervisor -->|"support query"| support_rep
 
     subgraph Music["🎵 Music Expert"]
-        music_expert["Music Expert<br/>(Gemini/GPT-4o-mini)"]
+        music_expert["Music Expert<br/>(GPT-4o-mini or Gemini)"]
         music_tools[["🔧 Music Tools<br/>• get_albums_by_artist<br/>• get_tracks_by_artist<br/>• check_for_songs<br/>• get_artists_by_genre<br/>• list_genres"]]
         music_expert -->|"needs data"| music_tools
         music_tools --> music_expert
@@ -58,7 +58,7 @@ flowchart TD
 | Component | Model | Purpose |
 |-----------|-------|---------|
 | **Supervisor** | GPT-4o-mini | Routes requests to Music Expert or Support Rep |
-| **Music Expert** | Gemini 2.0 Flash (configurable) | Catalog queries - albums, tracks, artists, genres |
+| **Music Expert** | GPT-4o-mini (or Gemini 2.0 Flash) | Catalog queries - albums, tracks, artists, genres |
 | **Support Rep** | GPT-4o | Account info, invoices, refunds |
 | **HITL Gate** | — | Requires human approval for refunds |
 
