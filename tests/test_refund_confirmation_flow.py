@@ -25,15 +25,12 @@ class TestRefundConfirmationFlow:
         checkpointer = MemorySaver()
         return create_graph(checkpointer=checkpointer)
 
-    def test_yes_confirmation_triggers_refund_tool(
-        self, graph, test_config_with_thread
-    ):
-        """When user confirms 'yes' after refund prompt, the refund tool should be called."""
+    def test_refund_request_triggers_hitl(self, graph, test_config_with_thread):
+        """A refund request should immediately call process_refund and trigger HITL."""
         config = test_config_with_thread("test-refund-1")
 
-        # First turn: User asks for refund
-        # Note: customer_id must be in the state, not just config
-        result1 = graph.invoke(
+        # User asks for refund
+        result = graph.invoke(
             {
                 "messages": [HumanMessage(content="I want a refund for invoice 143")],
                 "customer_id": 1,
@@ -41,66 +38,35 @@ class TestRefundConfirmationFlow:
             config,
         )
 
-        # The bot should have looked up the invoice and asked for confirmation
-        messages1 = result1["messages"]
-        last_ai_msg = None
-        for msg in reversed(messages1):
-            if (
-                isinstance(msg, AIMessage)
-                and msg.content
-                and not (hasattr(msg, "name") and msg.name == "supervisor")
-            ):
-                last_ai_msg = msg
-                break
-
-        assert last_ai_msg is not None, "Bot should have responded"
-        print(f"\n[Turn 1] Bot response: {last_ai_msg.content[:200]}...")
-
-        # Second turn: User confirms "yes"
-        result2 = graph.invoke({"messages": [HumanMessage(content="yes")]}, config)
-
-        messages2 = result2["messages"]
-
-        # Check if refund tool was called OR if we hit HITL interrupt
+        # Check that we hit the HITL interrupt
         state = graph.get_state(config)
 
-        # Either the graph is interrupted (HITL) or refund tool was called
+        # Verify process_refund was called (triggers HITL)
         refund_tool_called = False
-        for msg in messages2:
-            if (
-                isinstance(msg, AIMessage)
-                and hasattr(msg, "tool_calls")
-                and msg.tool_calls
-            ):
+        for msg in result["messages"]:
+            if isinstance(msg, AIMessage) and msg.tool_calls:
                 for tc in msg.tool_calls:
                     if tc["name"] == "process_refund":
                         refund_tool_called = True
                         break
 
-        hitl_triggered = state.next and len(state.next) > 0
+        print(f"\nRefund tool called: {refund_tool_called}")
+        print(f"HITL triggered (state.next): {state.next}")
 
-        print(f"\n[Turn 2] Refund tool called: {refund_tool_called}")
-        print(f"[Turn 2] HITL triggered (state.next): {state.next}")
-        print(f"[Turn 2] Number of messages: {len(messages2)}")
-
-        # Print all messages for debugging
-        for i, msg in enumerate(messages2):
-            msg_type = type(msg).__name__
-            content = (
-                getattr(msg, "content", "")[:100] if hasattr(msg, "content") else ""
-            )
-            tool_calls = getattr(msg, "tool_calls", None)
-            print(f"  [{i}] {msg_type}: {content}... | tool_calls: {tool_calls}")
-
-        assert refund_tool_called or hitl_triggered, (
-            "After user confirms 'yes', the refund tool should be called or HITL should trigger"
+        assert refund_tool_called, (
+            "Support rep should call process_refund for refund requests"
+        )
+        assert state.next and "refund_tools" in state.next, (
+            "Graph should be interrupted at refund_tools for HITL approval"
         )
 
-    def test_support_rep_has_conversation_context(self, graph, test_config_with_thread):
-        """The support rep should see the full conversation history including the confirmation."""
-        config = test_config_with_thread("test-refund-2")
+    def test_hitl_approval_resumes_graph(self, graph, test_config_with_thread):
+        """After HITL approval (using Command), the graph should resume and complete."""
+        from langgraph.types import Command
 
-        # Turn 1: Ask for refund
+        config = test_config_with_thread("test-refund-approval")
+
+        # User asks for refund - triggers HITL
         graph.invoke(
             {
                 "messages": [HumanMessage(content="I want a refund for invoice 143")],
@@ -109,17 +75,49 @@ class TestRefundConfirmationFlow:
             config,
         )
 
-        # Turn 2: Confirm
+        # Verify we're at HITL interrupt
+        state = graph.get_state(config)
+        assert state.next and "refund_tools" in state.next
+
+        # Resume the graph (simulating admin approval)
+        graph.invoke(Command(resume=True), config)
+
+        # Graph should have completed
+        final_state = graph.get_state(config)
+        print(f"\nAfter approval - state.next: {final_state.next}")
+
+        # Should have completed (no more pending nodes)
+        assert not final_state.next or len(final_state.next) == 0, (
+            "Graph should complete after HITL approval"
+        )
+
+    def test_conversation_history_preserved_across_hitl(
+        self, graph, test_config_with_thread
+    ):
+        """Conversation history should be preserved even when HITL interrupts."""
+        config = test_config_with_thread("test-refund-history")
+
+        # Turn 1: Music query (no HITL)
         graph.invoke(
-            {"messages": [HumanMessage(content="yes, please process the refund")]},
+            {
+                "messages": [HumanMessage(content="What AC/DC albums do you have?")],
+                "customer_id": 1,
+            },
             config,
         )
 
-        # Get the state and check message history
+        # Turn 2: Refund request (triggers HITL)
+        graph.invoke(
+            {
+                "messages": [HumanMessage(content="I want a refund for invoice 143")],
+                "customer_id": 1,
+            },
+            config,
+        )
+
+        # Get state and verify history
         state = graph.get_state(config)
         all_messages = state.values.get("messages", [])
-
-        # Should have multiple human messages (original request + confirmation)
         human_messages = [m for m in all_messages if isinstance(m, HumanMessage)]
 
         print(f"\nHuman messages in state: {len(human_messages)}")
@@ -127,7 +125,7 @@ class TestRefundConfirmationFlow:
             print(f"  - {hm.content}")
 
         assert len(human_messages) >= 2, (
-            "State should contain both the original request and the confirmation"
+            "State should preserve both the music query and the refund request"
         )
 
 

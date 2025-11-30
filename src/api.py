@@ -50,14 +50,14 @@ rejected_responses: dict[str, str] = {}
 def build_config(thread_id: str, customer_id: int) -> dict:
     """Build a config dict for graph invocation.
 
-    Adds 'test' tag when LANGSMITH_TEST_MODE environment variable is set.
-    Also includes any tags from LANGCHAIN_TAGS env var (comma-separated),
-    such as 'ci-cd' when running in GitHub Actions.
-    This allows filtering test traces from production in LangSmith.
+    Adds source and environment tags for LangSmith filtering:
+    - source:webui - identifies requests from the web interface
+    - test - added when LANGSMITH_TEST_MODE is set
+    - ci-cd - added via LANGCHAIN_TAGS when running in GitHub Actions
     """
     config = {"configurable": {"thread_id": thread_id, "customer_id": customer_id}}
 
-    tags = []
+    tags = ["source:webui"]  # Always tag web UI requests
 
     # Add test tag when in test mode
     if os.getenv("LANGSMITH_TEST_MODE"):
@@ -68,8 +68,7 @@ def build_config(thread_id: str, customer_id: int) -> dict:
     if extra_tags:
         tags.extend(tag.strip() for tag in extra_tags.split(",") if tag.strip())
 
-    if tags:
-        config["tags"] = tags
+    config["tags"] = tags
 
     return config
 
@@ -323,6 +322,12 @@ def get_thread_status(thread_id: str, customer_id: int = 1):
 def serve_admin():
     """Serve the admin dashboard."""
     return FileResponse("static/admin.html")
+
+
+@app.get("/favicon.ico")
+def serve_favicon():
+    """Serve the favicon."""
+    return FileResponse("static/favicon.ico")
 
 
 # Serve static files (will add the HTML frontend here)
