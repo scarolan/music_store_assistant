@@ -75,12 +75,13 @@ Examples:
     checkpointer = MemorySaver()
     graph = create_graph(checkpointer=checkpointer)
 
-    # Session config
+    # Session config with source tag for LangSmith filtering
     config = {
         "configurable": {
             "thread_id": "cli-session",
             "customer_id": args.customer_id,
-        }
+        },
+        "tags": ["source:cli"],
     }
 
     print("\n" + "=" * 60)
