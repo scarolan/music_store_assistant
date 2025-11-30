@@ -40,7 +40,7 @@ class TestRefundConfirmationFlow:
 
         # Check that we hit the HITL interrupt
         state = graph.get_state(config)
-        
+
         # Verify process_refund was called (triggers HITL)
         refund_tool_called = False
         for msg in result["messages"]:
@@ -53,7 +53,9 @@ class TestRefundConfirmationFlow:
         print(f"\nRefund tool called: {refund_tool_called}")
         print(f"HITL triggered (state.next): {state.next}")
 
-        assert refund_tool_called, "Support rep should call process_refund for refund requests"
+        assert refund_tool_called, (
+            "Support rep should call process_refund for refund requests"
+        )
         assert state.next and "refund_tools" in state.next, (
             "Graph should be interrupted at refund_tools for HITL approval"
         )
@@ -61,7 +63,7 @@ class TestRefundConfirmationFlow:
     def test_hitl_approval_resumes_graph(self, graph, test_config_with_thread):
         """After HITL approval (using Command), the graph should resume and complete."""
         from langgraph.types import Command
-        
+
         config = test_config_with_thread("test-refund-approval")
 
         # User asks for refund - triggers HITL
@@ -78,12 +80,12 @@ class TestRefundConfirmationFlow:
         assert state.next and "refund_tools" in state.next
 
         # Resume the graph (simulating admin approval)
-        result = graph.invoke(Command(resume=True), config)
+        graph.invoke(Command(resume=True), config)
 
         # Graph should have completed
         final_state = graph.get_state(config)
         print(f"\nAfter approval - state.next: {final_state.next}")
-        
+
         # Should have completed (no more pending nodes)
         assert not final_state.next or len(final_state.next) == 0, (
             "Graph should complete after HITL approval"

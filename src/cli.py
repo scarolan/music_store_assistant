@@ -12,7 +12,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import sys
 
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
@@ -134,6 +133,7 @@ Examples:
             print(f"\n❌ Error: {e}\n")
             if args.verbose:
                 import traceback
+
                 traceback.print_exc()
 
 

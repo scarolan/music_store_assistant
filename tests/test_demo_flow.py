@@ -5,7 +5,7 @@ verifying that routing, tool calls, and HITL work end-to-end.
 """
 
 import pytest
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.checkpoint.memory import MemorySaver
 
 from src.graph import create_graph
@@ -36,7 +36,7 @@ class TestDemoFlow:
 
     def invoke_with_message(self, graph, message: str, config: dict) -> dict:
         """Helper to invoke graph with proper state initialization.
-        
+
         customer_id must be in BOTH state and config:
         - State: so the support rep node can read it
         - Config: for LangGraph's configurable system
@@ -147,6 +147,8 @@ class TestDemoFlow:
             config,
         )
 
+        assert self.get_route(result) == "support"
+
     # =========================================================================
     # 3️⃣ Routing Edge Cases
     # =========================================================================
@@ -214,7 +216,7 @@ class TestDemoFlow:
         # The graph should have called get_invoice, then tried to call process_refund
         # which triggers the interrupt. Check that we see the refund tool in pending state.
         state = graph_with_memory.get_state(config)
-        
+
         # Check if there are pending tasks (HITL interrupt)
         if state.next:
             # Graph is paused at refund_tools node
@@ -245,7 +247,9 @@ class TestDemoFlow:
             config,
         )
         assert self.get_route(result2) == "music"
-        assert self.has_tool_call(result2, "get_albums_by_artist") or self.has_tool_call(result2, "get_tracks_by_artist")
+        assert self.has_tool_call(
+            result2, "get_albums_by_artist"
+        ) or self.has_tool_call(result2, "get_tracks_by_artist")
 
     # =========================================================================
     # 6️⃣ Edge Cases & Robustness
@@ -262,7 +266,10 @@ class TestDemoFlow:
         assert self.get_route(result) == "music"
         response = self.get_last_ai_message(result)
         # Should indicate we don't have the artist
-        assert any(phrase in response.lower() for phrase in ["don't have", "not in", "couldn't find", "no ", "sorry"])
+        assert any(
+            phrase in response.lower()
+            for phrase in ["don't have", "not in", "couldn't find", "no ", "sorry"]
+        )
 
 
 class TestFullDemoSession:
@@ -307,7 +314,7 @@ class TestFullDemoSession:
                 config=config,
             )
             actual_route = result.get("route", "unknown")
-            
+
             assert actual_route == expected_route, (
                 f"Message: '{user_message}'\n"
                 f"Expected route: {expected_route}, Got: {actual_route}"
