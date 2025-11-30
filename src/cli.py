@@ -114,9 +114,29 @@ Examples:
         # Invoke the graph
         try:
             result = graph.invoke(
-                {"messages": [HumanMessage(content=user_input)]},
+                {
+                    "messages": [HumanMessage(content=user_input)],
+                    "customer_id": args.customer_id,
+                },
                 config=config,
             )
+
+            # Check for HITL interrupt
+            state = graph.get_state(config)
+            if state.next and "refund_tools" in state.next:
+                print("\n🔒 **Refund Request Requires Approval**")
+                print("   A supervisor needs to approve this refund.")
+                approval = input("   Approve refund? (yes/no): ").strip().lower()
+
+                if approval in ("yes", "y"):
+                    # Resume the graph
+                    from langgraph.types import Command
+
+                    result = graph.invoke(Command(resume=True), config)
+                    print("   ✅ Refund approved and processed!\n")
+                else:
+                    print("   ❌ Refund rejected.\n")
+                    continue
 
             if args.verbose:
                 tool_calls = format_tool_calls(result["messages"])
