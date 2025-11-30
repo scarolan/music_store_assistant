@@ -23,7 +23,7 @@ These queries route to the **Music Expert** agent and demonstrate catalog browsi
 
 #### Ask about an artist:
 ```
-What AC/DC albums to you carry?
+What AC/DC albums do you carry?
 ```
 > Shows: Supervisor routes to Music Expert → calls `get_albums_by_artist` tool
 
