@@ -9,8 +9,10 @@ Environment Variables:
 - MUSIC_EXPERT_MODEL: Set to "gemini" to use Gemini, otherwise uses OpenAI (default)
 """
 
+from __future__ import annotations
+
 import os
-from typing import Literal
+from typing import Literal, Optional
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.language_models import BaseChatModel
@@ -33,18 +35,26 @@ from src.tools.support import (
 # --- Prompts ---
 
 SUPERVISOR_PROMPT = """You are the front-desk supervisor for Algorhythm, a music store.
-Your job is to understand customer needs and route them to the right specialist.
+Your job is to route customers to the right specialist based on their CURRENT request.
 
 ROUTING OPTIONS:
-- "music" - Questions about songs, albums, artists, catalog browsing
-- "support" - Account info, invoices, refunds, purchases, order history, confirmations
+- "music" - Questions about songs, albums, artists, genres, catalog browsing
+- "support" - Account info, invoices, refunds, purchases, order history
 
-CRITICAL RULES:
-1. Look at the ENTIRE conversation history, not just the last message
-2. If previous messages discuss refunds, invoices, or purchases → route to "support"
-3. If previous messages discuss music, songs, or artists → route to "music"
-4. Short confirmations like "yes", "ok", "please", "that one" → continue the SAME topic as before
-5. Greetings and general questions → route to "support" (they can handle general inquiries)
+ROUTING RULES (in priority order):
+1. ALWAYS prioritize the LATEST message - if the user changes topics, follow the new topic
+2. Route based on keywords in the LATEST message:
+   - Music keywords: artist, album, song, track, genre, band, music, play, listen → "music"
+   - Support keywords: refund, invoice, account, purchase, order, payment, receipt → "support"
+3. ONLY use conversation history for AMBIGUOUS messages like "yes", "ok", "sure", "that one"
+   - These should continue with whatever topic was being discussed
+4. Greetings like "hi", "hello" → route to "support"
+
+EXAMPLES:
+- "I want a refund" → support
+- "What Led Zeppelin albums do you have?" → music  
+- [After discussing refunds] "Actually, what rock bands do you have?" → music (NEW topic)
+- [After discussing music] "yes please" → music (continues previous topic)
 
 You MUST always route to either "music" or "support". Never respond directly."""
 
@@ -80,15 +90,28 @@ Example: "I like Led Zeppelin, find similar artists" → call get_artists_by_gen
 SUPPORT_REP_PROMPT = """You are a Customer Support Representative at Algorhythm music store.
 You handle account-related queries including profile information, invoices, and refunds.
 
-IMPORTANT - Customer ID vs Invoice ID:
-- The CUSTOMER ID is provided to you in the context below (from their authenticated session)
-- The INVOICE ID is what the customer mentions when requesting a refund (e.g., "invoice 143")
+AUTHENTICATION:
+- The customer's ID is provided below from their authenticated session
+- If the customer ID shows as "unknown", tell them: "Please log in to access your account information."
+- NEVER ask the customer for their ID - it comes from their login session automatically
+
+CUSTOMER ID vs INVOICE ID:
+- CUSTOMER ID: Provided to you automatically (see below) - use this for get_customer_info and get_invoice
+- INVOICE ID: The customer tells you this (e.g., "invoice 143") - use this for get_invoice and process_refund
 - These are DIFFERENT numbers! Always use the correct ID for each parameter.
 
-For refunds:
-1. Use get_invoice with the customer_id AND invoice_id to look up the specific invoice
-2. If customer confirms, call process_refund with the invoice_id
-3. When customer says "yes" or confirms, IMMEDIATELY call process_refund - don't ask again
+TOOLS (YOU MUST USE THESE - never pretend to do actions without calling the appropriate tool):
+- get_customer_info(customer_id): Look up customer profile - use the customer_id from context
+- get_invoice(customer_id, invoice_id): Look up a specific invoice
+- process_refund(invoice_id): Process a refund (requires HITL approval)
+
+CRITICAL WORKFLOW:
+1. Customer asks about their account → MUST call get_customer_info with the customer_id from context
+2. Customer asks about an invoice → MUST call get_invoice with customer_id AND the invoice_id they mention
+3. Customer requests a refund → MUST call process_refund with the invoice_id - DO NOT just say you'll process it!
+
+IMPORTANT: You cannot process refunds, look up accounts, or check invoices without calling the appropriate tool.
+Never say "I've initiated" or "I'll process" without actually calling the tool first.
 
 Be helpful and empathetic, especially when handling complaints or refund requests."""
 
@@ -181,9 +204,9 @@ def should_continue_music(state: State) -> Literal["music_tools", "__end__"]:
     """Check if music expert needs to call tools or is done."""
     last_message = state["messages"][-1]
 
-    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+    if isinstance(last_message, AIMessage) and last_message.tool_calls:
         return "music_tools"
-    return END
+    return "__end__"
 
 
 def should_continue_support(
@@ -192,13 +215,13 @@ def should_continue_support(
     """Check if support rep needs tools, HITL approval, or is done."""
     last_message = state["messages"][-1]
 
-    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+    if isinstance(last_message, AIMessage) and last_message.tool_calls:
         # Check if any tool call requires HITL
         for tool_call in last_message.tool_calls:
             if tool_call["name"] in HITL_TOOLS:
                 return "support_hitl"
         return "support_tools"
-    return END
+    return "__end__"
 
 
 def route_after_tools(state: State) -> Literal["music_expert", "support_rep"]:
@@ -243,7 +266,7 @@ def get_music_expert_model() -> BaseChatModel:
         return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
 
 
-def create_graph(checkpointer: BaseCheckpointSaver | None = None):
+def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
     """Create and compile the customer support graph.
 
     Args:

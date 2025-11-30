@@ -37,5 +37,6 @@ asyncio_mode = "auto"
 
 [dependency-groups]
 dev = [
+    "pyright>=1.1.407",
     "ruff>=0.14.7",
 ]
