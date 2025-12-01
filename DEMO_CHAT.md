@@ -312,7 +312,6 @@ Be ready for questions like:
 | Music Expert | 3 min | Catalog browsing |
 | Support Rep | 2 min | Account lookups |
 | HITL Refund | 4 min | ⭐ Human approval flow |
-| Bonus | 1 min | Edge cases |
 | **Part 2: Studio Demo** | 10 min | Architecture deep-dive |
 | Multi-Tool | 3 min | Agent chains tools autonomously |
 | Multi-Turn | 2 min | Context retention |
