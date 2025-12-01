@@ -311,12 +311,20 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
     builder.add_conditional_edges(
         "supervisor",
         route_supervisor,
-        {"music_expert": "music_expert", "support_rep": "support_rep"},
+        {
+            "music_expert": "music_expert",
+            "support_rep": "support_rep",
+        },
     )
 
     # Add edges from music expert
     builder.add_conditional_edges(
-        "music_expert", should_continue_music, {"music_tools": "music_tools", END: END}
+        "music_expert",
+        should_continue_music,
+        {
+            "music_tools": "music_tools",
+            END: END,
+        },
     )
 
     # Add edges from support rep (with HITL check)
