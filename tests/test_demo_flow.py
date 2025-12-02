@@ -12,7 +12,7 @@ from src.graph import create_graph
 
 
 # Default customer ID for all demo tests (matches Chinook test data)
-DEFAULT_CUSTOMER_ID = 1
+DEFAULT_CUSTOMER_ID = 16
 
 
 class TestDemoFlow:
