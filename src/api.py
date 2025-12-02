@@ -104,7 +104,11 @@ class ApproveResponse(BaseModel):
 
 
 def extract_assistant_response(result: dict) -> str:
-    """Extract the last assistant message from the graph result."""
+    """Extract the last assistant message from the graph result.
+
+    Uses LangChain v1's standard content_blocks API for provider-agnostic
+    access to message content (works with OpenAI, Gemini, Anthropic, etc.)
+    """
     from langchain_core.messages import AIMessage
 
     messages = result.get("messages", [])
@@ -115,20 +119,18 @@ def extract_assistant_response(result: dict) -> str:
         # Skip routing messages from supervisor
         if hasattr(msg, "name") and msg.name == "supervisor":
             continue
-        # Must have content
-        if msg.content:
-            content = msg.content
-            # Handle Gemini's list-of-blocks format
-            if isinstance(content, list):
-                # Extract text from content blocks
-                text_parts = []
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        text_parts.append(block.get("text", ""))
-                    elif isinstance(block, str):
-                        text_parts.append(block)
+        # Extract text using standard content_blocks API (LangChain v1)
+        if hasattr(msg, "content_blocks") and msg.content_blocks:
+            text_parts = [
+                block.get("text", "")
+                for block in msg.content_blocks
+                if block.get("type") == "text"
+            ]
+            if text_parts:
                 return "".join(text_parts)
-            return content
+        # Fallback for simple string content
+        if msg.content and isinstance(msg.content, str):
+            return msg.content
     return "I'm not sure how to help with that."
 
 
