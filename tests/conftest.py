@@ -9,17 +9,17 @@ from dataclasses import dataclass, field
 @dataclass
 class TokenUsageTracker:
     """Track token usage across all tests in a session."""
-    
+
     total_tokens: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_cost: float = 0.0
     llm_calls: int = 0
-    
+
     # Track per-test breakdown
     test_costs: dict = field(default_factory=dict)
     current_test: str = ""
-    
+
     def add_usage(self, prompt: int, completion: int, cost: float):
         """Record token usage from a callback."""
         self.prompt_tokens += prompt
@@ -27,15 +27,19 @@ class TokenUsageTracker:
         self.total_tokens += prompt + completion
         self.total_cost += cost
         self.llm_calls += 1
-        
+
         # Track per-test
         if self.current_test:
             if self.current_test not in self.test_costs:
-                self.test_costs[self.current_test] = {"tokens": 0, "cost": 0.0, "calls": 0}
+                self.test_costs[self.current_test] = {
+                    "tokens": 0,
+                    "cost": 0.0,
+                    "calls": 0,
+                }
             self.test_costs[self.current_test]["tokens"] += prompt + completion
             self.test_costs[self.current_test]["cost"] += cost
             self.test_costs[self.current_test]["calls"] += 1
-    
+
     def summary(self) -> str:
         """Generate a summary report."""
         lines = [
@@ -50,20 +54,20 @@ class TokenUsageTracker:
             f"  Estimated Cost:       ${self.total_cost:.4f}",
             "-" * 60,
         ]
-        
+
         if self.test_costs:
             # Sort by cost descending
             sorted_tests = sorted(
-                self.test_costs.items(), 
-                key=lambda x: x[1]["cost"], 
-                reverse=True
+                self.test_costs.items(), key=lambda x: x[1]["cost"], reverse=True
             )[:5]  # Top 5 most expensive
-            
+
             lines.append("  Top 5 Most Expensive Tests:")
             for test_name, data in sorted_tests:
                 short_name = test_name.split("::")[-1][:40]
-                lines.append(f"    {short_name:<40} ${data['cost']:.4f} ({data['tokens']:,} tokens)")
-        
+                lines.append(
+                    f"    {short_name:<40} ${data['cost']:.4f} ({data['tokens']:,} tokens)"
+                )
+
         lines.append("=" * 60)
         return "\n".join(lines)
 
@@ -157,6 +161,7 @@ def db_path():
 # Token Usage Tracking Hooks
 # ============================================================================
 
+
 @pytest.fixture(scope="session")
 def token_tracker():
     """Provide access to the global token tracker."""
@@ -174,7 +179,7 @@ def track_current_test(request):
 @pytest.fixture
 def openai_callback():
     """Provide an OpenAI callback that tracks token usage.
-    
+
     Usage in tests:
         def test_something(openai_callback):
             with openai_callback() as cb:
@@ -183,18 +188,16 @@ def openai_callback():
     """
     from langchain_community.callbacks import get_openai_callback
     from contextlib import contextmanager
-    
+
     @contextmanager
     def _tracked_callback():
         with get_openai_callback() as cb:
             yield cb
         # Record usage after the context exits
         _token_tracker.add_usage(
-            prompt=cb.prompt_tokens,
-            completion=cb.completion_tokens,
-            cost=cb.total_cost
+            prompt=cb.prompt_tokens, completion=cb.completion_tokens, cost=cb.total_cost
         )
-    
+
     return _tracked_callback
 
 
