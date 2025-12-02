@@ -22,7 +22,8 @@ env:
   LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
   LANGCHAIN_TRACING_V2: ${{ vars.LANGCHAIN_TRACING_V2 }}
   LANGCHAIN_PROJECT: ${{ vars.LANGCHAIN_PROJECT }}
-  LANGCHAIN_TAGS: ci-cd
+  # Unique tag per CI run - allows accurate cost tracking without double-counting
+  LANGCHAIN_TAGS: "ci-cd,run-${{ github.run_id }}"
   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
   MUSIC_EXPERT_MODEL: ${{ vars.MUSIC_EXPERT_MODEL }}
@@ -175,9 +176,7 @@ jobs:
 
       - name: Generate LLM Cost Report
         run: |
-          echo "## 🔥 LLM Token Usage Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          uv run python scripts/report_test_costs.py --tag ci-cd --minutes 30 >> $GITHUB_STEP_SUMMARY
+          uv run python scripts/report_test_costs.py --tag "run-${{ github.run_id }}" --minutes 60 --markdown >> $GITHUB_STEP_SUMMARY
         env:
           LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
           LANGCHAIN_PROJECT: ${{ vars.LANGCHAIN_PROJECT }}
