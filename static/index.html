@@ -29,6 +29,7 @@
         .gradient-text {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
     </style>
@@ -141,11 +142,11 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                        <span class="font-bold">LG</span>
+                        <span class="font-bold">FH</span>
                     </div>
                     <div>
-                        <p class="font-semibold">Welcome back, Luís!</p>
-                        <p class="text-sm text-gray-400">Customer #1 • luisg@example.com</p>
+                        <p class="font-semibold">Welcome back, Frank!</p>
+                        <p class="text-sm text-gray-400">Customer #16 • fharris@google.com</p>
                     </div>
                 </div>
                 <div class="text-sm text-gray-400">
@@ -220,7 +221,7 @@
                     <i class="fas fa-robot text-sm"></i>
                 </div>
                 <div class="bg-gray-700 rounded-lg rounded-tl-none p-3 max-w-[80%]">
-                    <p>Hi Luís! 👋 I'm the Algorhythm support assistant. I can help you with:</p>
+                    <p>Hi Frank! 👋 I'm the Algorhythm support assistant. I can help you with:</p>
                     <ul class="mt-2 text-sm text-gray-300 space-y-1">
                         <li>🎵 Finding music & albums</li>
                         <li>📋 Viewing your invoices</li>
@@ -297,7 +298,7 @@
             messageDiv.className = `flex items-start space-x-3 ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`;
             
             const avatar = isUser 
-                ? '<div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0"><span class="text-sm font-bold">LG</span></div>'
+                ? '<div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0"><span class="text-sm font-bold">FH</span></div>'
                 : '<div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-robot text-sm"></i></div>';
             
             const bubbleClass = isUser 
@@ -356,7 +357,7 @@
             
             pollInterval = setInterval(async () => {
                 try {
-                    const response = await fetch(`/status/${threadId}?customer_id=1`);
+                    const response = await fetch(`/status/${threadId}?customer_id=16`);
                     const data = await response.json();
                     
                     if (data.status === 'completed') {
@@ -399,7 +400,7 @@
                     body: JSON.stringify({
                         message: message,
                         thread_id: threadId,
-                        customer_id: 1
+                        customer_id: 16
                     })
                 });
 
