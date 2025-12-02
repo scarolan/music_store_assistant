@@ -286,7 +286,7 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
     supervisor_model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
     # Support Rep uses GPT-4o for complex customer interactions
-    support_model = ChatOpenAI(model="gpt-4o", temperature=0, streaming=True)
+    support_model = ChatOpenAI(model="gpt-4o-mini", temperature=0, streaming=True)
 
     # Music Expert can use Gemini or OpenAI based on config
     music_model = get_music_expert_model()
