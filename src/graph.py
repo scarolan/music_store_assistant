@@ -144,7 +144,9 @@ class RouteDecision(BaseModel):
 DEFAULT_MODEL = "gpt-4o-mini"
 
 
-def get_model_for_role(role: str, env_var: str, temperature: float = 0, **kwargs) -> BaseChatModel:
+def get_model_for_role(
+    role: str, env_var: str, temperature: float = 0, **kwargs
+) -> BaseChatModel:
     """Create a chat model based on environment configuration.
 
     Auto-detects provider from model name prefix:
@@ -170,9 +172,13 @@ def get_model_for_role(role: str, env_var: str, temperature: float = 0, **kwargs
             from langchain_google_genai import ChatGoogleGenerativeAI
 
             print(f"🤖 {role}: Using Gemini ({model_name})")
-            return ChatGoogleGenerativeAI(model=model_name, temperature=temperature, **kwargs)
+            return ChatGoogleGenerativeAI(
+                model=model_name, temperature=temperature, **kwargs
+            )
         except ImportError:
-            print(f"⚠️ langchain-google-genai not installed, falling back to {DEFAULT_MODEL}")
+            print(
+                f"⚠️ langchain-google-genai not installed, falling back to {DEFAULT_MODEL}"
+            )
             model_name = DEFAULT_MODEL
 
     elif model_name.startswith("claude"):
@@ -182,7 +188,9 @@ def get_model_for_role(role: str, env_var: str, temperature: float = 0, **kwargs
             print(f"🤖 {role}: Using Anthropic ({model_name})")
             return ChatAnthropic(model=model_name, temperature=temperature, **kwargs)
         except ImportError:
-            print(f"⚠️ langchain-anthropic not installed, falling back to {DEFAULT_MODEL}")
+            print(
+                f"⚠️ langchain-anthropic not installed, falling back to {DEFAULT_MODEL}"
+            )
             model_name = DEFAULT_MODEL
 
     elif model_name.startswith("deepseek"):
@@ -332,9 +340,15 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
         SUPPORT_REP_MODEL: Model for support operations (default: gpt-4o-mini)
     """
     # Initialize models from environment configuration
-    supervisor_model = get_model_for_role("Supervisor", "SUPERVISOR_MODEL", temperature=0)
-    music_model = get_model_for_role("Music Expert", "MUSIC_EXPERT_MODEL", temperature=0.7)
-    support_model = get_model_for_role("Support Rep", "SUPPORT_REP_MODEL", temperature=0, streaming=True)
+    supervisor_model = get_model_for_role(
+        "Supervisor", "SUPERVISOR_MODEL", temperature=0
+    )
+    music_model = get_model_for_role(
+        "Music Expert", "MUSIC_EXPERT_MODEL", temperature=0.7
+    )
+    support_model = get_model_for_role(
+        "Support Rep", "SUPPORT_REP_MODEL", temperature=0, streaming=True
+    )
 
     # Create the graph
     builder = StateGraph(State)
