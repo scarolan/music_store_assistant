@@ -181,7 +181,7 @@ def get_model_for_role(
             print(
                 f"⚠️ langchain-google-genai not installed, falling back to {DEFAULT_MODEL}"
             )
-            model_name = DEFAULT_MODEL
+            return ChatOpenAI(model=DEFAULT_MODEL, temperature=temperature)
 
     elif model_name.startswith("claude"):
         try:
@@ -195,7 +195,7 @@ def get_model_for_role(
             print(
                 f"⚠️ langchain-anthropic not installed, falling back to {DEFAULT_MODEL}"
             )
-            model_name = DEFAULT_MODEL
+            return ChatOpenAI(model=DEFAULT_MODEL, temperature=temperature)
 
     elif model_name.startswith("deepseek"):
         try:
@@ -209,7 +209,7 @@ def get_model_for_role(
             )
         except Exception as e:
             print(f"⚠️ DeepSeek setup failed: {e}, falling back to {DEFAULT_MODEL}")
-            model_name = DEFAULT_MODEL
+            return ChatOpenAI(model=DEFAULT_MODEL, temperature=temperature)
 
     # Default: OpenAI (gpt-* models)
     print(f"🤖 {role}: Using OpenAI ({model_name})")
