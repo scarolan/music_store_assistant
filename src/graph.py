@@ -164,7 +164,9 @@ def get_model_for_role(
     Returns:
         Configured BaseChatModel instance
     """
-    model_name = os.getenv(env_var, DEFAULT_MODEL).lower()
+    model_name = os.getenv(env_var, DEFAULT_MODEL).strip().lower()
+    if not model_name:
+        model_name = DEFAULT_MODEL
 
     # Auto-detect provider from model name
     if model_name.startswith("gemini"):
