@@ -1,5 +1,6 @@
 """Tests for the get_model_for_role model factory function."""
 
+import builtins
 import os
 import pytest
 from unittest.mock import patch, MagicMock
@@ -191,7 +192,7 @@ class TestModelFactoryFallback:
 
         with patch.dict(os.environ, {"TEST_MODEL": "gemini-2.0-flash"}, clear=False):
             # Mock the import to raise ImportError
-            original_import = __builtins__["__import__"]
+            original_import = builtins.__import__
 
             def mock_import(name, *args, **kwargs):
                 if name == "langchain_google_genai":
@@ -216,7 +217,7 @@ class TestModelFactoryFallback:
 
         with patch.dict(os.environ, {"TEST_MODEL": "claude-sonnet-4-20250514"}, clear=False):
             # Mock the import to raise ImportError
-            original_import = __builtins__["__import__"]
+            original_import = builtins.__import__
 
             def mock_import(name, *args, **kwargs):
                 if name == "langchain_anthropic":
