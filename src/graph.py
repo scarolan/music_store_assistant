@@ -196,13 +196,18 @@ def get_model_for_role(
             model_name = DEFAULT_MODEL
 
     elif model_name.startswith("deepseek"):
+        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+        if not deepseek_api_key:
+            raise ValueError(
+                f"DEEPSEEK_API_KEY environment variable is required for model: {model_name}"
+            )
         try:
             print(f"🤖 {role}: Using DeepSeek ({model_name})")
             return ChatOpenAI(
                 model=model_name,
                 temperature=temperature,
                 base_url="https://api.deepseek.com",
-                api_key=os.getenv("DEEPSEEK_API_KEY"),
+                api_key=deepseek_api_key,
                 **kwargs,
             )
         except Exception as e:
