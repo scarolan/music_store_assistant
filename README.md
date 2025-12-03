@@ -18,7 +18,7 @@ flowchart TD
     supervisor -->|"support query"| support_rep
 
     subgraph Music["🎵 Music Expert"]
-        music_expert["Music Expert<br/>(GPT-4o-mini or Gemini)"]
+        music_expert["Music Expert<br/>(GPT-4o-mini)"]
         music_tools[["🔧 Music Tools<br/>• get_albums_by_artist<br/>• get_tracks_by_artist<br/>• check_for_songs<br/>• get_artists_by_genre<br/>• list_genres"]]
         music_expert -->|"needs data"| music_tools
         music_tools --> music_expert
@@ -58,14 +58,14 @@ flowchart TD
 | Component | Model | Purpose |
 |-----------|-------|---------|
 | **Supervisor** | GPT-4o-mini | Routes requests to Music Expert or Support Rep |
-| **Music Expert** | GPT-4o-mini (or Gemini 2.0 Flash) | Catalog queries - albums, tracks, artists, genres |
+| **Music Expert** | GPT-4o-mini (or Gemini/Claude) | Catalog queries - albums, tracks, artists, genres |
 | **Support Rep** | GPT-4o-mini | Account info, invoices, refunds |
 | **HITL Gate** | — | Requires human approval for refunds |
 
 ## Setup
 
-1. Create a `.env` file with your API keys:
-   ```
+1. Create a `.env` file with your API keys (see `.env.example` for all options):
+   ```bash
    OPENAI_API_KEY=your-key-here
    LANGCHAIN_API_KEY=your-key-here
    LANGCHAIN_TRACING_V2=true
@@ -82,7 +82,39 @@ flowchart TD
    curl -o Chinook.db https://github.com/lerocha/chinook-database/raw/master/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite
    ```
 
+## Model Configuration
+
+All models default to `gpt-4o-mini` but can be swapped via environment variables:
+
+```bash
+# OpenAI (default)
+export MUSIC_EXPERT_MODEL=gpt-4o-mini
+
+# Anthropic
+export MUSIC_EXPERT_MODEL=claude-3-5-haiku-20241022
+
+# Google Gemini
+export MUSIC_EXPERT_MODEL=gemini-2.0-flash
+
+# DeepSeek (budget option)
+export MUSIC_EXPERT_MODEL=deepseek-chat
+```
+
+Available env vars: `SUPERVISOR_MODEL`, `MUSIC_EXPERT_MODEL`, `SUPPORT_REP_MODEL`
+
+Provider is auto-detected from model name prefix (`gpt-*`, `claude-*`, `gemini-*`, `deepseek-*`).
+
 ## Usage
+
+### Web UI (Recommended for Demos)
+
+```bash
+uv run uvicorn src.api:app --reload --host 0.0.0.0 --port 8000
+```
+
+Then open http://localhost:8000 for the customer chat interface, or http://localhost:8000/admin for the HITL approval dashboard.
+
+### Python API
 
 ```python
 from src.graph import create_graph
@@ -93,25 +125,37 @@ config = {"configurable": {"customer_id": 1}}
 result = graph.invoke({"messages": [("user", "What albums does AC/DC have?")]}, config)
 ```
 
+### CLI
+
+```bash
+uv run python -m src.cli
+```
+
 ## Testing
 
 ```bash
-pytest
+uv run pytest
 ```
 
 ## Project Structure
 
 ```
 ├── src/
-│   ├── __init__.py
-│   ├── graph.py        # Main LangGraph definition
+│   ├── graph.py        # Main LangGraph definition + model factory
 │   ├── state.py        # TypedDict state schema
-│   ├── tools/
-│   │   ├── __init__.py
-│   │   ├── music.py    # Read-only catalog tools
-│   │   └── support.py  # Sensitive write tools (HITL)
-│   └── utils.py        # Database utilities
-├── tests/              # Pytest test suite
-├── Chinook.db          # SQLite database
+│   ├── api.py          # FastAPI backend for web UI
+│   ├── cli.py          # Interactive CLI
+│   ├── utils.py        # Database utilities
+│   └── tools/
+│       ├── music.py    # Read-only catalog tools
+│       └── support.py  # Sensitive write tools (HITL)
+├── static/
+│   ├── index.html      # Customer chat interface
+│   └── admin.html      # HITL approval dashboard
+├── tests/              # Pytest test suite (80+ tests)
+├── scripts/
+│   └── report_test_costs.py  # LangSmith cost reporting
+├── Chinook.db          # SQLite music catalog database
+├── .env.example        # Environment variable reference
 └── pyproject.toml
 ```
