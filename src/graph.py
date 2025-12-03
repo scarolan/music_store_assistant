@@ -150,10 +150,10 @@ def get_model_for_role(
     """Create a chat model based on environment configuration.
 
     Auto-detects provider from model name prefix:
-    - gpt-* → OpenAI
-    - gemini-* → Google Gemini
-    - claude-* → Anthropic
-    - deepseek-* → DeepSeek
+    - gpt-* → OpenAI (requires OPENAI_API_KEY)
+    - gemini-* → Google Gemini (requires GEMINI_API_KEY)
+    - claude-* → Anthropic (requires ANTHROPIC_API_KEY)
+    - deepseek-* → DeepSeek (requires DEEPSEEK_API_KEY)
 
     Args:
         role: Display name for logging (e.g., "Supervisor", "Music Expert")
