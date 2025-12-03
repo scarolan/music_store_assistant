@@ -18,6 +18,9 @@ dependencies = [
     "langgraph-cli[inmem]>=0.4.7",
     "langchain-anthropic>=1.2.0",
     "langchain-deepseek>=1.0.1",
+    "langsmith>=0.2.0",
+    "openevals>=0.1.0",
+    "agentevals>=0.0.9",
 ]
 
 [project.optional-dependencies]

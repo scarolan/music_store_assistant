@@ -227,6 +227,17 @@ uv run python scripts/report_test_costs.py --minutes 30
 ├── static/
 │   ├── index.html        # Customer chat UI
 │   └── admin.html        # HITL approval dashboard
+├── evals/                    # LangSmith evaluation framework
+│   ├── datasets/
+│   │   ├── create_datasets.py    # Upload dataset to LangSmith
+│   │   └── golden_examples.json  # 50 test cases
+│   ├── evaluators/
+│   │   ├── custom.py             # Routing, tool selection, hallucination
+│   │   └── llm_judge.py          # Helpfulness, clarity, in-character
+│   ├── experiments/
+│   │   ├── run_model_comparison.py  # Multi-model experiments
+│   │   └── run_pairwise.py          # Head-to-head comparisons
+│   └── README.md
 ├── scripts/
 │   └── report_test_costs.py  # LangSmith cost reporting
 ├── .github/
@@ -302,6 +313,7 @@ Models are configured via environment variables with auto-detection:
 | Update demo script | `DEMO_CHAT.md` |
 | Modify CI pipeline | `.github/workflows/ci.yml` |
 | Configure LangGraph Studio | `langgraph.json` |
+| Run model evaluations | `evals/README.md`, `evals/experiments/` |
 
 ---
 
@@ -331,3 +343,65 @@ uv run ruff check src/ tests/
 uv run pyright src/
 uv run pytest -v
 ```
+
+---
+
+## 9. LangSmith Evaluations
+
+### Overview
+
+The `evals/` directory contains a comprehensive evaluation framework for comparing model performance:
+
+- **50 golden test cases** covering music queries, support queries, HITL triggers, and edge cases
+- **4 model configurations**: GPT-4o (quality), GPT-4o-mini (baseline), Claude Haiku (speed), Gemini Flash (cost)
+- **Custom evaluators**: Routing accuracy, tool selection, hallucination detection
+- **LLM-as-judge**: Helpfulness, clarity, in-character assessment
+- **Pairwise comparisons**: Head-to-head model battles
+
+### Quick Start
+
+```bash
+# 1. Upload dataset to LangSmith (one-time)
+uv run python evals/datasets/create_datasets.py
+
+# 2. Run experiments across all models
+uv run python evals/experiments/run_model_comparison.py
+
+# 3. View results at https://smith.langchain.com (Datasets & Experiments)
+
+# 4. Optional: Run pairwise comparison
+uv run python evals/experiments/run_pairwise.py --model1 gpt-4o-mini --model2 claude-haiku
+```
+
+### Evaluators
+
+| Evaluator | Type | What it Measures |
+|-----------|------|------------------|
+| `routing_accuracy` | Custom | Supervisor routes to correct agent |
+| `tool_selection` | Custom | Agent picks expected tool |
+| `contains_check` | Custom | Response has expected content |
+| `hallucination_check` | Custom | No made-up content |
+| `hitl_trigger` | Custom | Refunds trigger HITL |
+| `helpfulness` | LLM Judge | Response is helpful and complete |
+| `clarity` | LLM Judge | Response is clear and organized |
+| `in_character` | LLM Judge | Stays in music store persona |
+
+### Adding Test Cases
+
+Edit `evals/datasets/golden_examples.json`:
+
+```json
+{
+  "id": "music-051",
+  "category": "music_artist_albums",
+  "inputs": {"message": "Your test message"},
+  "expected": {
+    "route": "music",
+    "tool": "get_albums_by_artist",
+    "contains": ["Expected content"],
+    "not_contains": ["Hallucination"]
+  }
+}
+```
+
+Then re-upload: `uv run python evals/datasets/create_datasets.py`

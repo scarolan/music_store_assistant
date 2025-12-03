@@ -1,0 +1,557 @@
+{
+  "description": "Golden test cases for Music Store Assistant evaluation",
+  "version": "1.0.0",
+  "examples": [
+    {
+      "id": "music-001",
+      "category": "music_artist_albums",
+      "inputs": {"message": "What AC/DC albums do you have?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_albums_by_artist",
+        "contains": ["Back in Black", "For Those About to Rock"],
+        "not_contains": ["Abbey Road", "Thriller"]
+      }
+    },
+    {
+      "id": "music-002",
+      "category": "music_artist_albums",
+      "inputs": {"message": "Show me all Led Zeppelin albums in your catalog"},
+      "expected": {
+        "route": "music",
+        "tool": "get_albums_by_artist",
+        "contains": ["Led Zeppelin"],
+        "not_contains": ["Dark Side of the Moon"]
+      }
+    },
+    {
+      "id": "music-003",
+      "category": "music_artist_albums",
+      "inputs": {"message": "Do you carry any Metallica records?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_albums_by_artist",
+        "contains": ["Metallica"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-004",
+      "category": "music_artist_albums",
+      "inputs": {"message": "I'm looking for albums by U2"},
+      "expected": {
+        "route": "music",
+        "tool": "get_albums_by_artist",
+        "contains": ["U2"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-005",
+      "category": "music_artist_albums",
+      "inputs": {"message": "What do you have from The Rolling Stones?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_albums_by_artist",
+        "contains": ["Rolling Stones"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-006",
+      "category": "music_artist_tracks",
+      "inputs": {"message": "What songs by Queen do you have?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_tracks_by_artist",
+        "contains": ["Queen"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-007",
+      "category": "music_artist_tracks",
+      "inputs": {"message": "List all tracks from Iron Maiden"},
+      "expected": {
+        "route": "music",
+        "tool": "get_tracks_by_artist",
+        "contains": ["Iron Maiden"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-008",
+      "category": "music_artist_tracks",
+      "inputs": {"message": "Show me Black Sabbath songs"},
+      "expected": {
+        "route": "music",
+        "tool": "get_tracks_by_artist",
+        "contains": ["Black Sabbath"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-009",
+      "category": "music_genre",
+      "inputs": {"message": "What jazz artists do you have?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Jazz"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-010",
+      "category": "music_genre",
+      "inputs": {"message": "Show me your rock artists"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Rock"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-011",
+      "category": "music_genre",
+      "inputs": {"message": "I'm in the mood for blues. What do you have?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Blues"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-012",
+      "category": "music_genre",
+      "inputs": {"message": "Any metal bands in your store?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Metal"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-013",
+      "category": "music_genre",
+      "inputs": {"message": "What classical music do you carry?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Classical"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-014",
+      "category": "music_genre",
+      "inputs": {"message": "I want some reggae recommendations"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Reggae"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-015",
+      "category": "music_song_search",
+      "inputs": {"message": "Do you have any songs with 'love' in the title?"},
+      "expected": {
+        "route": "music",
+        "tool": "check_for_songs",
+        "contains": ["love"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-016",
+      "category": "music_song_search",
+      "inputs": {"message": "I'm looking for a song called 'Highway to Hell'"},
+      "expected": {
+        "route": "music",
+        "tool": "check_for_songs",
+        "contains": ["Highway"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-017",
+      "category": "music_song_search",
+      "inputs": {"message": "Find songs with 'night' in the name"},
+      "expected": {
+        "route": "music",
+        "tool": "check_for_songs",
+        "contains": ["night"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-018",
+      "category": "music_genres_list",
+      "inputs": {"message": "What genres of music do you carry?"},
+      "expected": {
+        "route": "music",
+        "tool": "list_genres",
+        "contains": ["Rock", "Jazz", "Blues"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-019",
+      "category": "music_genres_list",
+      "inputs": {"message": "What kind of music do you have?"},
+      "expected": {
+        "route": "music",
+        "tool": "list_genres",
+        "contains": ["Rock", "Jazz"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-020",
+      "category": "music_genres_list",
+      "inputs": {"message": "List all your music categories"},
+      "expected": {
+        "route": "music",
+        "tool": "list_genres",
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-021",
+      "category": "music_recommendation",
+      "inputs": {"message": "I like AC/DC, can you suggest similar artists?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Rock"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-022",
+      "category": "music_recommendation",
+      "inputs": {"message": "What bands are similar to Metallica?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Metal"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-023",
+      "category": "music_complex",
+      "inputs": {"message": "I want to explore your Latin music collection"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Latin"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-024",
+      "category": "music_complex",
+      "inputs": {"message": "What's your best selling rock album?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "music-025",
+      "category": "music_edge_case",
+      "inputs": {"message": "Do you have any Taylor Swift albums?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_albums_by_artist",
+        "contains": [],
+        "not_contains": ["1989", "Fearless"],
+        "note": "Taylor Swift not in Chinook - should say not found"
+      }
+    },
+    {
+      "id": "support-001",
+      "category": "support_account",
+      "inputs": {"message": "What's my account information?"},
+      "expected": {
+        "route": "support",
+        "tool": "get_customer_info",
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "support-002",
+      "category": "support_account",
+      "inputs": {"message": "Can you tell me about my account?"},
+      "expected": {
+        "route": "support",
+        "tool": "get_customer_info",
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "support-003",
+      "category": "support_account",
+      "inputs": {"message": "What email do you have on file for me?"},
+      "expected": {
+        "route": "support",
+        "tool": "get_customer_info",
+        "contains": ["@"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "support-004",
+      "category": "support_account",
+      "inputs": {"message": "Show me my profile"},
+      "expected": {
+        "route": "support",
+        "tool": "get_customer_info",
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "support-005",
+      "category": "support_account",
+      "inputs": {"message": "What's my address on file?"},
+      "expected": {
+        "route": "support",
+        "tool": "get_customer_info",
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "support-006",
+      "category": "support_invoice",
+      "inputs": {"message": "Show me my recent purchases"},
+      "expected": {
+        "route": "support",
+        "tool": "get_invoice",
+        "contains": ["Invoice"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "support-007",
+      "category": "support_invoice",
+      "inputs": {"message": "I need to see invoice 98"},
+      "expected": {
+        "route": "support",
+        "tool": "get_invoice",
+        "contains": ["98"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "support-008",
+      "category": "support_invoice",
+      "inputs": {"message": "What was my last order?"},
+      "expected": {
+        "route": "support",
+        "tool": "get_invoice",
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "support-009",
+      "category": "support_invoice",
+      "inputs": {"message": "Can you pull up invoice number 143?"},
+      "expected": {
+        "route": "support",
+        "tool": "get_invoice",
+        "contains": ["143"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "support-010",
+      "category": "support_invoice",
+      "inputs": {"message": "How much did I spend on my last purchase?"},
+      "expected": {
+        "route": "support",
+        "tool": "get_invoice",
+        "contains": ["Total"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "refund-001",
+      "category": "refund_hitl",
+      "inputs": {"message": "I want a refund for invoice 98"},
+      "expected": {
+        "route": "support",
+        "tool": "process_refund",
+        "hitl_required": true,
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "refund-002",
+      "category": "refund_hitl",
+      "inputs": {"message": "Please refund my purchase, invoice 143"},
+      "expected": {
+        "route": "support",
+        "tool": "process_refund",
+        "hitl_required": true,
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "refund-003",
+      "category": "refund_hitl",
+      "inputs": {"message": "I need my money back for order 45"},
+      "expected": {
+        "route": "support",
+        "tool": "process_refund",
+        "hitl_required": true,
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "refund-004",
+      "category": "refund_hitl",
+      "inputs": {"message": "Can I get a refund on invoice 200?"},
+      "expected": {
+        "route": "support",
+        "tool": "process_refund",
+        "hitl_required": true,
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "refund-005",
+      "category": "refund_hitl",
+      "inputs": {"message": "I'm unhappy with my purchase and want a refund for invoice 77"},
+      "expected": {
+        "route": "support",
+        "tool": "process_refund",
+        "hitl_required": true,
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "greeting-001",
+      "category": "greeting",
+      "inputs": {"message": "Hello!"},
+      "expected": {
+        "route": "support",
+        "tool": null,
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "greeting-002",
+      "category": "greeting",
+      "inputs": {"message": "Hi, I need some help"},
+      "expected": {
+        "route": "support",
+        "tool": null,
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "greeting-003",
+      "category": "greeting",
+      "inputs": {"message": "Good morning"},
+      "expected": {
+        "route": "support",
+        "tool": null,
+        "contains": [],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "edge-001",
+      "category": "edge_case",
+      "inputs": {"message": "I want to buy some rock music and also get a refund"},
+      "expected": {
+        "route": "support",
+        "tool": null,
+        "note": "Ambiguous - refund keyword should prioritize support"
+      }
+    },
+    {
+      "id": "edge-002",
+      "category": "edge_case",
+      "inputs": {"message": ""},
+      "expected": {
+        "route": "support",
+        "tool": null,
+        "note": "Empty message edge case"
+      }
+    },
+    {
+      "id": "edge-003",
+      "category": "edge_case",
+      "inputs": {"message": "asdfghjkl"},
+      "expected": {
+        "route": "support",
+        "tool": null,
+        "note": "Gibberish should route to support for help"
+      }
+    },
+    {
+      "id": "edge-004",
+      "category": "edge_case",
+      "inputs": {"message": "What's the weather like today?"},
+      "expected": {
+        "route": "support",
+        "tool": null,
+        "note": "Off-topic question - should politely redirect"
+      }
+    },
+    {
+      "id": "edge-005",
+      "category": "edge_case",
+      "inputs": {"message": "Tell me a joke"},
+      "expected": {
+        "route": "support",
+        "tool": null,
+        "note": "Off-topic - should stay in character as music store assistant"
+      }
+    },
+    {
+      "id": "complex-001",
+      "category": "complex_query",
+      "inputs": {"message": "I bought a jazz album last month but I want something more upbeat. What rock albums do you recommend?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Rock"],
+        "not_contains": []
+      }
+    },
+    {
+      "id": "complex-002",
+      "category": "complex_query",
+      "inputs": {"message": "My friend loves Deep Purple. What similar bands do you have?"},
+      "expected": {
+        "route": "music",
+        "tool": "get_artists_by_genre",
+        "contains": ["Rock"],
+        "not_contains": []
+      }
+    }
+  ]
+}
