@@ -33,10 +33,7 @@ flowchart TB
     end
 
     subgraph External["☁️ External Services"]
-        openai["OpenAI<br/>gpt-4o-mini"]
-        anthropic["Anthropic<br/>claude-*"]
-        google["Google<br/>gemini-*"]
-        deepseek["DeepSeek<br/>deepseek-*"]
+        llm["LLM Provider<br/>(configurable)"]
         langsmith["LangSmith<br/>Observability"]
     end
 
@@ -64,12 +61,9 @@ flowchart TB
     music --> checkpointer
     support --> checkpointer
 
-    supervisor -.-> openai
-    music -.-> openai
-    music -.-> anthropic
-    music -.-> google
-    music -.-> deepseek
-    support -.-> openai
+    supervisor -.-> llm
+    music -.-> llm
+    support -.-> llm
 
     Graph -.->|"traces"| langsmith
 
