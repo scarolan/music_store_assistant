@@ -248,7 +248,7 @@ def get_music_expert_model() -> BaseChatModel:
     """Get the model for the music expert based on environment config.
 
     Set MUSIC_EXPERT_MODEL=gemini to use Google Gemini.
-    Defaults to OpenAI GPT-4o.
+    Defaults to OpenAI GPT-4o-mini.
     """
     model_choice = os.getenv("MUSIC_EXPERT_MODEL", "openai").lower()
 
@@ -285,7 +285,7 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
     # Supervisor uses cheaper model - routing is simple classification
     supervisor_model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-    # Support Rep uses GPT-4o for complex customer interactions
+    # Support Rep uses GPT-4o-mini (sufficient for tool calling, 16x cheaper than GPT-4o)
     support_model = ChatOpenAI(model="gpt-4o-mini", temperature=0, streaming=True)
 
     # Music Expert can use Gemini or OpenAI based on config

@@ -25,7 +25,7 @@ flowchart TD
     end
 
     subgraph Support["💼 Support Rep"]
-        support_rep["Support Rep<br/>(GPT-4o)"]
+        support_rep["Support Rep<br/>(GPT-4o-mini)"]
         support_tools[["🔧 Safe Tools<br/>• get_invoice<br/>• get_customer_profile"]]
         refund_tools[["⚠️ HITL Tools<br/>• process_refund"]]
         
@@ -59,7 +59,7 @@ flowchart TD
 |-----------|-------|---------|
 | **Supervisor** | GPT-4o-mini | Routes requests to Music Expert or Support Rep |
 | **Music Expert** | GPT-4o-mini (or Gemini 2.0 Flash) | Catalog queries - albums, tracks, artists, genres |
-| **Support Rep** | GPT-4o | Account info, invoices, refunds |
+| **Support Rep** | GPT-4o-mini | Account info, invoices, refunds |
 | **HITL Gate** | — | Requires human approval for refunds |
 
 ## Setup
