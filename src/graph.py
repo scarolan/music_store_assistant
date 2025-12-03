@@ -2,11 +2,19 @@
 
 This module defines the StateGraph with:
 - Supervisor node: Routes user intent to appropriate worker
-- Music_Expert node: Handles read-only catalog queries (supports Gemini or OpenAI)
+- Music_Expert node: Handles read-only catalog queries
 - Support_Rep node: Handles sensitive account operations (with HITL for refunds)
 
-Environment Variables:
-- MUSIC_EXPERT_MODEL: Set to "gemini" to use Gemini, otherwise uses OpenAI (default)
+Environment Variables (all default to gpt-4o-mini):
+- SUPERVISOR_MODEL: Model for routing decisions (e.g., gpt-4o-mini, gpt-4o)
+- MUSIC_EXPERT_MODEL: Model for music queries (e.g., gpt-4o-mini, gemini-2.0-flash, claude-sonnet-4-20250514)
+- SUPPORT_REP_MODEL: Model for support operations (e.g., gpt-4o-mini, gpt-4o)
+
+Supported providers are auto-detected from model name:
+- gpt-* → OpenAI
+- gemini-* → Google Gemini
+- claude-* → Anthropic
+- deepseek-* → DeepSeek
 """
 
 from __future__ import annotations
@@ -131,6 +139,83 @@ class RouteDecision(BaseModel):
     )
 
 
+# --- Model Factory ---
+
+DEFAULT_MODEL = "gpt-4o-mini"
+
+
+def get_model_for_role(
+    role: str, env_var: str, temperature: float = 0, **kwargs
+) -> BaseChatModel:
+    """Create a chat model based on environment configuration.
+
+    Auto-detects provider from model name prefix:
+    - gpt-* → OpenAI
+    - gemini-* → Google Gemini
+    - claude-* → Anthropic
+    - deepseek-* → DeepSeek
+
+    Args:
+        role: Display name for logging (e.g., "Supervisor", "Music Expert")
+        env_var: Environment variable to read model name from
+        temperature: Model temperature (default 0)
+        **kwargs: Additional arguments passed to the model constructor
+
+    Returns:
+        Configured BaseChatModel instance
+    """
+    model_name = os.getenv(env_var, DEFAULT_MODEL).strip().lower()
+    if not model_name:
+        model_name = DEFAULT_MODEL
+
+    # Auto-detect provider from model name
+    if model_name.startswith("gemini"):
+        try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
+
+            print(f"🤖 {role}: Using Gemini ({model_name})")
+            return ChatGoogleGenerativeAI(
+                model=model_name, temperature=temperature, **kwargs
+            )
+        except ImportError:
+            print(
+                f"⚠️ langchain-google-genai not installed, falling back to {DEFAULT_MODEL}"
+            )
+            model_name = DEFAULT_MODEL
+
+    elif model_name.startswith("claude"):
+        try:
+            from langchain_anthropic import ChatAnthropic
+
+            print(f"🤖 {role}: Using Anthropic ({model_name})")
+            return ChatAnthropic(
+                model_name=model_name, temperature=temperature, **kwargs
+            )
+        except ImportError:
+            print(
+                f"⚠️ langchain-anthropic not installed, falling back to {DEFAULT_MODEL}"
+            )
+            model_name = DEFAULT_MODEL
+
+    elif model_name.startswith("deepseek"):
+        try:
+            print(f"🤖 {role}: Using DeepSeek ({model_name})")
+            return ChatOpenAI(
+                model=model_name,
+                temperature=temperature,
+                base_url="https://api.deepseek.com",
+                api_key=os.getenv("DEEPSEEK_API_KEY"),
+                **kwargs,
+            )
+        except Exception as e:
+            print(f"⚠️ DeepSeek setup failed: {e}, falling back to {DEFAULT_MODEL}")
+            model_name = DEFAULT_MODEL
+
+    # Default: OpenAI (gpt-* models)
+    print(f"🤖 {role}: Using OpenAI ({model_name})")
+    return ChatOpenAI(model=model_name, temperature=temperature, **kwargs)
+
+
 # --- Node Functions ---
 
 
@@ -244,31 +329,6 @@ def route_after_tools(state: State) -> Literal["music_expert", "support_rep"]:
 # --- Graph Factory ---
 
 
-def get_music_expert_model() -> BaseChatModel:
-    """Get the model for the music expert based on environment config.
-
-    Set MUSIC_EXPERT_MODEL=gemini to use Google Gemini.
-    Defaults to OpenAI GPT-4o-mini.
-    """
-    model_choice = os.getenv("MUSIC_EXPERT_MODEL", "openai").lower()
-
-    if model_choice == "gemini":
-        try:
-            from langchain_google_genai import ChatGoogleGenerativeAI
-
-            print("🎵 Music Expert: Using Gemini (gemini-2.0-flash)")
-            return ChatGoogleGenerativeAI(
-                model="gemini-2.0-flash",
-                temperature=0.7,  # Slightly creative for music recommendations
-            )
-        except ImportError:
-            print("⚠️ langchain-google-genai not installed, falling back to OpenAI")
-            return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
-    else:
-        print("🎵 Music Expert: Using OpenAI (gpt-4o-mini)")
-        return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
-
-
 def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
     """Create and compile the customer support graph.
 
@@ -279,17 +339,20 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
         Compiled StateGraph ready for invocation.
 
     Environment Variables:
-        MUSIC_EXPERT_MODEL: Set to "gemini" to use Gemini for music queries.
+        SUPERVISOR_MODEL: Model for routing (default: gpt-4o-mini)
+        MUSIC_EXPERT_MODEL: Model for music queries (default: gpt-4o-mini)
+        SUPPORT_REP_MODEL: Model for support operations (default: gpt-4o-mini)
     """
-    # Initialize models
-    # Supervisor uses cheaper model - routing is simple classification
-    supervisor_model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-
-    # Support Rep uses GPT-4o-mini (sufficient for tool calling, 16x cheaper than GPT-4o)
-    support_model = ChatOpenAI(model="gpt-4o-mini", temperature=0, streaming=True)
-
-    # Music Expert can use Gemini or OpenAI based on config
-    music_model = get_music_expert_model()
+    # Initialize models from environment configuration
+    supervisor_model = get_model_for_role(
+        "Supervisor", "SUPERVISOR_MODEL", temperature=0
+    )
+    music_model = get_model_for_role(
+        "Music Expert", "MUSIC_EXPERT_MODEL", temperature=0.7
+    )
+    support_model = get_model_for_role(
+        "Support Rep", "SUPPORT_REP_MODEL", temperature=0, streaming=True
+    )
 
     # Create the graph
     builder = StateGraph(State)
