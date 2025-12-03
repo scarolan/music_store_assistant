@@ -186,7 +186,9 @@ def get_model_for_role(
             from langchain_anthropic import ChatAnthropic
 
             print(f"🤖 {role}: Using Anthropic ({model_name})")
-            return ChatAnthropic(model=model_name, temperature=temperature, **kwargs)
+            return ChatAnthropic(
+                model_name=model_name, temperature=temperature, **kwargs
+            )
         except ImportError:
             print(
                 f"⚠️ langchain-anthropic not installed, falling back to {DEFAULT_MODEL}"
