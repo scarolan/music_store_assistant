@@ -151,7 +151,7 @@ def get_model_for_role(
 
     Auto-detects provider from model name prefix:
     - gpt-* → OpenAI (requires OPENAI_API_KEY)
-    - gemini-* → Google Gemini (requires GEMINI_API_KEY)
+    - gemini-* → Google Gemini (requires GOOGLE_API_KEY)
     - claude-* → Anthropic (requires ANTHROPIC_API_KEY)
     - deepseek-* → DeepSeek (requires DEEPSEEK_API_KEY)
 
