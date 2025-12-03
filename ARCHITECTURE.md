@@ -326,7 +326,7 @@ Customer identity is injected via configuration, simulating JWT-style session au
 
 ```mermaid
 flowchart TB
-    subgraph ReadOnly["✅ Read-Only (No Restrictions)"]
+    subgraph ReadOnly["✅ Read-Only (Public Catalog)"]
         m1["get_albums_by_artist"]
         m2["get_tracks_by_artist"]
         m3["check_for_songs"]
@@ -334,31 +334,31 @@ flowchart TB
         m5["list_genres"]
     end
     
-    subgraph SafeWrite["✅ Safe Write (Scoped by customer_id)"]
+    subgraph ScopedRead["✅ Read-Only (Scoped by customer_id)"]
         s1["get_customer_info"]
         s2["get_invoice"]
     end
     
-    subgraph Sensitive["⚠️ Sensitive (HITL Required)"]
+    subgraph Sensitive["⚠️ Write Operation (HITL Required)"]
         h1["process_refund"]
     end
     
-    style ReadOnly fill:#e8f5e9
-    style SafeWrite fill:#fff3e0
-    style Sensitive fill:#ffebee
+    style ReadOnly fill:#e8f5e9,color:#1b5e20
+    style ScopedRead fill:#e3f2fd,color:#0d47a1
+    style Sensitive fill:#ffebee,color:#b71c1c
 ```
 
 ## Observability
 
 ```mermaid
 flowchart LR
-    graph["LangGraph"]
+    lg["LangGraph"]
     langsmith["LangSmith"]
     traces["Traces"]
     tokens["Token Usage"]
     costs["Cost Reports"]
     
-    graph -->|"all LLM calls"| langsmith
+    lg -->|"all LLM calls"| langsmith
     langsmith --> traces
     langsmith --> tokens
     tokens --> costs
