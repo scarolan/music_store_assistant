@@ -26,7 +26,7 @@ class CustomerContext:
         customer_id: The authenticated customer's ID (simulates JWT claim).
     """
 
-    customer_id: int = 1  # Default for demo purposes
+    customer_id: int = 16  # Default for demo purposes
 
 
 class State(TypedDict):

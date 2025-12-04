@@ -140,7 +140,7 @@ def test_context():
     Usage in tests:
         result = graph.invoke({"messages": [...]}, test_config, context=test_context)
     """
-    return {"customer_id": 1}
+    return {"customer_id": 16}
 
 
 @pytest.fixture
@@ -156,7 +156,7 @@ def test_config_with_thread():
         result = graph.invoke({"messages": [...]}, config, context=context)
     """
 
-    def _make_config(thread_id: str, customer_id: int = 1):
+    def _make_config(thread_id: str, customer_id: int = 16):
         config = {
             "configurable": {"thread_id": thread_id},
             "tags": get_langsmith_tags(),

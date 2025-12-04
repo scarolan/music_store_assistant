@@ -125,7 +125,7 @@ graph = create_graph()
 result = graph.invoke(
     {"messages": [("user", "What albums does AC/DC have?")]},
     config={},
-    context={"customer_id": 1}
+    context={"customer_id": 16}
 )
 ```
 

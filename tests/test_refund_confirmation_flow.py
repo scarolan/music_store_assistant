@@ -207,9 +207,9 @@ class TestSupportRepToolCalling:
                     if tc["name"] == "get_invoice":
                         args = tc["args"]
                         print(f"get_invoice called with: {args}")
-                        # customer_id should be 1 (from context), invoice_id should be 143
-                        assert args.get("customer_id") == 1, (
-                            f"customer_id should be 1, got {args.get('customer_id')}"
+                        # customer_id should be 16 (from context), invoice_id should be 143
+                        assert args.get("customer_id") == 16, (
+                            f"customer_id should be 16, got {args.get('customer_id')}"
                         )
                         # invoice_id is optional but if present should be 143
                         if "invoice_id" in args:

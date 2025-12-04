@@ -35,7 +35,7 @@ class TestStateSchema:
         from src.state import CustomerContext
 
         ctx = CustomerContext()
-        assert ctx.customer_id == 1  # Default for demo
+        assert ctx.customer_id == 16  # Default for demo
 
     def test_state_messages_uses_add_messages_reducer(self):
         """Messages field should use the add_messages reducer for proper history management."""

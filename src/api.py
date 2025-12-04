@@ -84,7 +84,7 @@ class ChatRequest(BaseModel):
 
     message: str
     thread_id: Optional[str] = None
-    customer_id: int = 16  # Default customer for demo
+    customer_id: int = 166  # Default customer for demo
 
 
 class ChatResponse(BaseModel):
@@ -231,7 +231,7 @@ def chat(request: ChatRequest):
 
 
 @app.post("/approve/{thread_id}", response_model=ApproveResponse)
-def approve_action(thread_id: str, customer_id: int = 1):
+def approve_action(thread_id: str, customer_id: int = 16):
     """Approve a pending HITL action and continue the graph."""
     config = build_config(thread_id, customer_id)
 
@@ -260,7 +260,7 @@ def approve_action(thread_id: str, customer_id: int = 1):
 
 
 @app.post("/reject/{thread_id}", response_model=ApproveResponse)
-def reject_action(thread_id: str, customer_id: int = 1):
+def reject_action(thread_id: str, customer_id: int = 16):
     """Reject a pending HITL action."""
     # Check if there's actually something pending
     pending, _ = check_pending_approval(thread_id, customer_id)
@@ -292,7 +292,7 @@ def get_pending_approvals():
 
 
 @app.get("/status/{thread_id}")
-def get_thread_status(thread_id: str, customer_id: int = 1):
+def get_thread_status(thread_id: str, customer_id: int = 16):
     """Check the status of a thread (for customer polling)."""
 
     # First check if this thread was rejected (we stored a canned response)

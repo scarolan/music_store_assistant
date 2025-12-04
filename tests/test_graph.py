@@ -50,7 +50,7 @@ class TestGraphCreation:
         assert graph is not None
 
         # Verify the context structure that will be used (NOT in configurable - secure!)
-        context = {"customer_id": 1}
+        context = {"customer_id": 16}
         assert "customer_id" in context
 
 

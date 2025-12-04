@@ -96,7 +96,7 @@ Entry → Supervisor → [music_expert | support_rep]
 # state.py - CustomerContext is a dataclass, NOT part of State
 @dataclass
 class CustomerContext:
-    customer_id: int = 1
+    customer_id: int = 16
 
 # graph.py - Graph uses context_schema
 builder = StateGraph(State, context_schema=CustomerContext)
@@ -111,7 +111,7 @@ def get_customer_info(runtime: ToolRuntime[CustomerContext]) -> str:
     customer_id = runtime.context.customer_id  # Secure!
 
 # Invocation passes context separately
-graph.invoke({"messages": [...]}, config, context={"customer_id": 1})
+graph.invoke({"messages": [...]}, config, context={"customer_id": 16})
 ```
 
 This prevents LLM from manipulating customer_id while allowing Studio to inject it via Assistants.
@@ -178,7 +178,7 @@ uv run pytest tests/test_graph.py::TestRouting::test_router_selects_music_for_mu
 
 | Fixture | Purpose |
 |---------|---------|
-| `test_config` | Config dict with `customer_id=1` and LangSmith tags |
+| `test_config` | Config dict with `customer_id=16` and LangSmith tags |
 | `test_config_with_thread(thread_id)` | Factory for thread-specific configs (HITL tests) |
 | `db_path` | Path to Chinook.db (skips if missing) |
 | `openai_callback()` | Context manager for token tracking |
@@ -209,7 +209,7 @@ uv run pytest tests/test_graph.py::TestRouting::test_router_selects_music_for_mu
    ```python
    def test_refund_triggers_hitl(self, graph, test_config_with_thread):
        config = test_config_with_thread("test-refund-1")
-       result = graph.invoke({"messages": [...], "customer_id": 1}, config)
+       result = graph.invoke({"messages": [...], "customer_id": 16}, config)
        state = graph.get_state(config)
        assert "refund_tools" in state.next  # Interrupted before refund
    ```

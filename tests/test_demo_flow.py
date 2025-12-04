@@ -331,7 +331,7 @@ class TestFullDemoSession:
             }
         }
         # customer_id is passed via context (secure - NOT in state or configurable)
-        context = {"customer_id": 1}
+        context = {"customer_id": 16}
 
         demo_script = [
             # Music queries

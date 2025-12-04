@@ -26,7 +26,7 @@ class TestChatEndpoint:
 
     def test_chat_returns_thread_id(self, client):
         """Chat should return a thread_id."""
-        response = client.post("/chat", json={"message": "Hello", "customer_id": 1})
+        response = client.post("/chat", json={"message": "Hello", "customer_id": 16})
         assert response.status_code == 200
         data = response.json()
         assert "thread_id" in data
@@ -36,7 +36,7 @@ class TestChatEndpoint:
     def test_chat_uses_provided_thread_id(self, client):
         """Chat should use provided thread_id for conversation continuity."""
         # First message
-        r1 = client.post("/chat", json={"message": "Hello", "customer_id": 1})
+        r1 = client.post("/chat", json={"message": "Hello", "customer_id": 16})
         thread_id = r1.json()["thread_id"]
 
         # Second message with same thread
@@ -60,14 +60,14 @@ class TestHITLFlow:
         # Step 1: Ask for refund
         r1 = client.post(
             "/chat",
-            json={"message": "I want a refund for invoice 143", "customer_id": 1},
+            json={"message": "I want a refund for invoice 143", "customer_id": 16},
         )
         thread_id = r1.json()["thread_id"]
 
         # Step 2: Confirm
         r2 = client.post(
             "/chat",
-            json={"message": "yes please", "thread_id": thread_id, "customer_id": 1},
+            json={"message": "yes please", "thread_id": thread_id, "customer_id": 16},
         )
 
         data = r2.json()
@@ -79,17 +79,17 @@ class TestHITLFlow:
         # Setup: Get to HITL state
         r1 = client.post(
             "/chat",
-            json={"message": "I want a refund for invoice 143", "customer_id": 1},
+            json={"message": "I want a refund for invoice 143", "customer_id": 16},
         )
         thread_id = r1.json()["thread_id"]
 
         r2 = client.post(
-            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 1}
+            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 16}
         )
         assert r2.json()["requires_approval"]
 
         # Approve
-        r3 = client.post(f"/approve/{thread_id}?customer_id=1")
+        r3 = client.post(f"/approve/{thread_id}?customer_id=16")
         assert r3.status_code == 200
 
         data = r3.json()
@@ -101,17 +101,17 @@ class TestHITLFlow:
         # Setup: Get to HITL state
         r1 = client.post(
             "/chat",
-            json={"message": "I want a refund for invoice 143", "customer_id": 1},
+            json={"message": "I want a refund for invoice 143", "customer_id": 16},
         )
         thread_id = r1.json()["thread_id"]
 
         r2 = client.post(
-            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 1}
+            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 16}
         )
         assert r2.json()["requires_approval"]
 
         # Reject
-        r3 = client.post(f"/reject/{thread_id}?customer_id=1")
+        r3 = client.post(f"/reject/{thread_id}?customer_id=16")
         assert r3.status_code == 200
 
         data = r3.json()
@@ -128,16 +128,16 @@ class TestStatusEndpoint:
         # Get to HITL state
         r1 = client.post(
             "/chat",
-            json={"message": "I want a refund for invoice 143", "customer_id": 1},
+            json={"message": "I want a refund for invoice 143", "customer_id": 16},
         )
         thread_id = r1.json()["thread_id"]
 
         client.post(
-            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 1}
+            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 16}
         )
 
         # Check status
-        r3 = client.get(f"/status/{thread_id}?customer_id=1")
+        r3 = client.get(f"/status/{thread_id}?customer_id=16")
         assert r3.status_code == 200
         assert r3.json()["status"] == "pending"
 
@@ -146,19 +146,19 @@ class TestStatusEndpoint:
         # Get to HITL state
         r1 = client.post(
             "/chat",
-            json={"message": "I want a refund for invoice 143", "customer_id": 1},
+            json={"message": "I want a refund for invoice 143", "customer_id": 16},
         )
         thread_id = r1.json()["thread_id"]
 
         client.post(
-            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 1}
+            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 16}
         )
 
         # Approve
-        client.post(f"/approve/{thread_id}?customer_id=1")
+        client.post(f"/approve/{thread_id}?customer_id=16")
 
         # Check status
-        r3 = client.get(f"/status/{thread_id}?customer_id=1")
+        r3 = client.get(f"/status/{thread_id}?customer_id=16")
         assert r3.status_code == 200
         assert r3.json()["status"] == "completed"
 
@@ -167,22 +167,22 @@ class TestStatusEndpoint:
         # Get to HITL state
         r1 = client.post(
             "/chat",
-            json={"message": "I want a refund for invoice 143", "customer_id": 1},
+            json={"message": "I want a refund for invoice 143", "customer_id": 16},
         )
         thread_id = r1.json()["thread_id"]
 
         r2 = client.post(
-            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 1}
+            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 16}
         )
         # Verify HITL was triggered
         assert r2.json().get("requires_approval"), "HITL should be triggered"
 
         # Reject
-        r_reject = client.post(f"/reject/{thread_id}?customer_id=1")
+        r_reject = client.post(f"/reject/{thread_id}?customer_id=16")
         assert r_reject.status_code == 200, f"Reject should succeed: {r_reject.json()}"
 
         # Check status
-        r3 = client.get(f"/status/{thread_id}?customer_id=1")
+        r3 = client.get(f"/status/{thread_id}?customer_id=16")
         assert r3.status_code == 200
         assert r3.json()["status"] == "completed"
         assert "unable to provide" in r3.json()["message"].lower()
@@ -202,12 +202,12 @@ class TestAdminEndpoint:
         # Get to HITL state
         r1 = client.post(
             "/chat",
-            json={"message": "I want a refund for invoice 143", "customer_id": 1},
+            json={"message": "I want a refund for invoice 143", "customer_id": 16},
         )
         thread_id = r1.json()["thread_id"]
 
         client.post(
-            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 1}
+            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 16}
         )
 
         # Check admin
@@ -222,16 +222,16 @@ class TestAdminEndpoint:
         # Get to HITL state
         r1 = client.post(
             "/chat",
-            json={"message": "I want a refund for invoice 143", "customer_id": 1},
+            json={"message": "I want a refund for invoice 143", "customer_id": 16},
         )
         thread_id = r1.json()["thread_id"]
 
         client.post(
-            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 1}
+            "/chat", json={"message": "yes", "thread_id": thread_id, "customer_id": 16}
         )
 
         # Approve
-        client.post(f"/approve/{thread_id}?customer_id=1")
+        client.post(f"/approve/{thread_id}?customer_id=16")
 
         # Check admin
         r3 = client.get("/admin/pending")
