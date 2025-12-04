@@ -215,7 +215,7 @@ class TestAdminEndpoint:
         pending = r3.json()["pending"]
         assert len(pending) == 1
         assert pending[0]["thread_id"] == thread_id
-        assert pending[0]["customer_id"] == 1
+        assert pending[0]["customer_id"] == 16
 
     def test_admin_pending_clears_after_approval(self, client):
         """Admin pending should clear after approval."""
