@@ -84,7 +84,7 @@ class ChatRequest(BaseModel):
 
     message: str
     thread_id: Optional[str] = None
-    customer_id: int = 166  # Default customer for demo
+    customer_id: int = 16  # Default customer for demo
 
 
 class ChatResponse(BaseModel):
