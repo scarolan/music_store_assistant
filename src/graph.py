@@ -279,11 +279,7 @@ def create_support_rep_node(model: ChatOpenAI):
             state: Graph state with messages.
             runtime: Runtime context containing customer_id (secure, not in state).
         """
-        # Read customer_id from runtime context (secure - not in state)
-        customer_id = runtime.context.customer_id
-        context_prompt = f"{SUPPORT_REP_PROMPT}\n\nCurrent customer ID: {customer_id}"
-
-        messages = [SystemMessage(content=context_prompt)] + state["messages"]
+        messages = [SystemMessage(content=SUPPORT_REP_PROMPT)] + state["messages"]
         response = support_model.invoke(messages)
         return {"messages": [response]}
 
