@@ -87,7 +87,7 @@ This is the **key demo moment** - showing the HITL approval gate.
 
 #### Step 1: Request a refund
 ```
-I'd like a refund for invoice 98
+I'd like a refund for invoice 134
 ```
 > Shows: Support Rep looks up invoice, then calls `process_refund`
 > Graph **interrupts** before executing the refund tool
@@ -149,12 +149,12 @@ What genres of music do you have?
 
 #### Step 2: Drill into a genre
 ```
-What tracks are in the Jazz genre?
+What tracks are in the Latin genre?
 ```
 
 **What to point out in Studio:**
 - 🧠 *"Notice the agent is smart enough to figure out the workflow on its own"*
-- 🔧 **First tool call:** `get_artists_by_genre("Jazz")` — gets artists
+- 🔧 **First tool call:** `get_artists_by_genre("Latin")` — gets artists
 - 🔧 **Second tool call:** `get_tracks_by_artist` — iterates to get actual tracks
 - 📊 Show the tool responses in sequence
 - 💡 *"I didn't tell it to do two queries. It reasoned through the schema and realized it needed to chain these tools together."*
@@ -175,19 +175,20 @@ I'm looking for some rock music
 > Agent responds with rock artists
 
 ```
-Do you have Led Zeppelin?
+Tell me more about 1 (or whatever number Led Zeppelin is)
 ```
 > Agent calls `get_albums_by_artist("Led Zeppelin")`
 
 ```
-What about their most popular songs?
+What are their most popular songs?
 ```
 > Agent calls `get_tracks_by_artist("Led Zeppelin")` — knows "their" = Led Zeppelin
 
 **What to point out in Studio:**
 - 📝 Show the `messages` array growing in state
-- 🔗 Highlight how the third query has no explicit artist name
+- 🔗 Highlight how the second and third queries are ambiguous without context.
 - 🧠 *"The agent resolved the pronoun 'their' by looking at conversation history"*
+- 🤯 It's interesting to note that the LLM did a pretty good job picking the most popular songs, without any explicit instructions on how to do that!
 
 ---
 
@@ -230,7 +231,7 @@ What's the weather like today?
 
 #### Step 1: Request a refund
 ```
-I'd like a refund for invoice 98
+I'd like a refund for invoice 134
 ```
 
 **What to point out in Studio:**
@@ -245,13 +246,9 @@ I'd like a refund for invoice 98
 - 💡 *"This is what gets sent to our admin queue. In production, this could go to Slack, email, or a ticketing system."*
 
 #### Step 3: Resume or reject
-- ✅ Click **Resume** (or approve in Studio's action menu)
+- ✅ Click **Continue** in LangSmith studio
 - 🔄 Watch the graph continue execution
 - 📋 Show the final state with refund confirmation
-
-**Alternative: Show rejection**
-- ❌ Click **Reject/Cancel**
-- 📋 Agent apologizes to customer
 
 > **Key Message:** LangGraph's interrupt pattern gives humans the final say on sensitive operations. This is essential for compliance, fraud prevention, and customer protection.
 
