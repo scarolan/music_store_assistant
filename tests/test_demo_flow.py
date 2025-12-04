@@ -112,7 +112,9 @@ class TestDemoFlow:
         # Both are valid music expert behaviors
         response = self.get_last_ai_message(result)
         assert self.has_tool_call(result, "check_for_songs") or (
-            "song" in response.lower() or "search" in response.lower() or "title" in response.lower()
+            "song" in response.lower()
+            or "search" in response.lower()
+            or "title" in response.lower()
         )
 
     def test_04_genre_query_calls_get_genres(self, graph_with_memory, config):
@@ -255,10 +257,12 @@ class TestDemoFlow:
         assert self.get_route(result2) == "music"
         response = self.get_last_ai_message(result2)
         # Accept tool call OR contextual response mentioning Led Zeppelin
-        has_tool = self.has_tool_call(result2, "get_albums_by_artist") or self.has_tool_call(
-            result2, "get_tracks_by_artist"
+        has_tool = self.has_tool_call(
+            result2, "get_albums_by_artist"
+        ) or self.has_tool_call(result2, "get_tracks_by_artist")
+        has_context_response = (
+            "led zeppelin" in response.lower() or "zeppelin" in response.lower()
         )
-        has_context_response = "led zeppelin" in response.lower() or "zeppelin" in response.lower()
         assert has_tool or has_context_response
 
     # =========================================================================
