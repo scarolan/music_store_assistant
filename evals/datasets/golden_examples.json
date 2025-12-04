@@ -170,11 +170,11 @@
     {
       "id": "music-016",
       "category": "music_song_search",
-      "inputs": {"message": "I'm looking for a song called 'Highway to Hell'"},
+      "inputs": {"message": "I'm looking for a song called 'Highway Star'"},
       "expected": {
         "route": "music",
         "tool": "check_for_songs",
-        "contains": ["Highway"],
+        "contains": ["Highway Star", "Deep Purple"],
         "not_contains": []
       }
     },
@@ -384,7 +384,7 @@
       "expected": {
         "route": "support",
         "tool": "get_invoice",
-        "contains": ["Total"],
+        "contains": ["$"],
         "not_contains": []
       }
     },
@@ -549,7 +549,7 @@
       "expected": {
         "route": "music",
         "tool": "get_artists_by_genre",
-        "contains": ["Rock"],
+        "contains": ["Led Zeppelin"],
         "not_contains": []
       }
     }
