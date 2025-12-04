@@ -5,10 +5,10 @@ This module defines the StateGraph with:
 - Music_Expert node: Handles read-only catalog queries
 - Support_Rep node: Handles sensitive account operations (with HITL for refunds)
 
-Environment Variables (all default to gpt-4o-mini):
-- SUPERVISOR_MODEL: Model for routing decisions (e.g., gpt-4o-mini, gpt-4o)
-- MUSIC_EXPERT_MODEL: Model for music queries (e.g., gpt-4o-mini, gemini-2.0-flash, claude-sonnet-4-20250514)
-- SUPPORT_REP_MODEL: Model for support operations (e.g., gpt-4o-mini, gpt-4o)
+Environment Variables:
+- SUPERVISOR_MODEL: Model for routing decisions (default: gpt-4o-mini)
+- MUSIC_EXPERT_MODEL: Model for music queries (default: gemini-2.0-flash)
+- SUPPORT_REP_MODEL: Model for support operations (default: gpt-4o-mini)
 
 Supported providers are auto-detected from model name:
 - gpt-* → OpenAI
@@ -28,9 +28,10 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
 
-from src.state import State
+from src.state import State, CustomerContext
 from src.tools.music import MUSIC_TOOLS
 from src.tools.support import (
     SUPPORT_TOOLS,
@@ -99,27 +100,29 @@ SUPPORT_REP_PROMPT = """You are a Customer Support Representative at Algorhythm 
 You handle account-related queries including profile information, invoices, and refunds.
 
 AUTHENTICATION:
-- The customer's ID is provided below from their authenticated session
-- If the customer ID shows as "unknown", tell them: "Please log in to access your account information."
+- The customer's ID is automatically injected from their authenticated session
+- You do NOT need to pass customer_id to tools - it's handled automatically
+- If no customer is authenticated, tell them: "Please log in to access your account information."
 - NEVER ask the customer for their ID - it comes from their login session automatically
 
-CUSTOMER ID vs INVOICE ID:
-- CUSTOMER ID: Provided to you automatically (see below) - use this for get_customer_info and get_invoice
-- INVOICE ID: The customer tells you this (e.g., "invoice 143") - use this for get_invoice and process_refund
-- These are DIFFERENT numbers! Always use the correct ID for each parameter.
+YOUR TOOLS:
+- get_customer_info(): Look up customer profile (name, email, address, phone)
+- get_invoice(invoice_id?): Look up invoices/orders/purchases
+  - With no arguments: Returns recent order history
+  - With invoice_id: Returns that specific invoice
+- process_refund(invoice_id): Process a refund (requires approval)
 
-TOOLS (YOU MUST USE THESE - never pretend to do actions without calling the appropriate tool):
-- get_customer_info(customer_id): Look up customer profile - use the customer_id from context
-- get_invoice(customer_id, invoice_id): Look up a specific invoice
-- process_refund(invoice_id): Process a refund (requires HITL approval)
+CRITICAL TOOL SELECTION:
+- "account", "profile", "who am I", "my info" → call get_customer_info()
+- "orders", "purchases", "invoices", "recent orders", "order history" → call get_invoice() with NO arguments
+- "invoice 123", "order 456" (specific number) → call get_invoice(invoice_id=123)
+- "refund" + invoice number → call process_refund(invoice_id) IMMEDIATELY
 
-CRITICAL WORKFLOW:
-1. Customer asks about their account → MUST call get_customer_info with the customer_id from context
-2. Customer asks about an invoice → MUST call get_invoice with customer_id AND the invoice_id they mention
-3. Customer requests a refund (says "refund" + invoice number) → MUST call process_refund IMMEDIATELY
-   - Do NOT look up the invoice first
-   - Do NOT ask for confirmation
-   - Just call process_refund(invoice_id) - the HITL system will handle approval
+WORKFLOW:
+1. Customer asks about their account/profile → MUST call get_customer_info()
+2. Customer asks about orders/purchases/invoices → MUST call get_invoice() (no args for history)
+3. Customer mentions a specific invoice number → MUST call get_invoice(invoice_id=X)
+4. Customer requests a refund → MUST call process_refund(invoice_id) - HITL system handles approval
 
 IMPORTANT: You cannot process refunds, look up accounts, or check invoices without calling the appropriate tool.
 Never say "I've initiated" or "I'll process" without actually calling the tool first.
@@ -142,10 +145,15 @@ class RouteDecision(BaseModel):
 # --- Model Factory ---
 
 DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_MUSIC_MODEL = "gemini-2.0-flash"
 
 
 def get_model_for_role(
-    role: str, env_var: str, temperature: float = 0, **kwargs
+    role: str,
+    env_var: str,
+    temperature: float = 0,
+    default: str | None = None,
+    **kwargs,
 ) -> BaseChatModel:
     """Create a chat model based on environment configuration.
 
@@ -159,14 +167,16 @@ def get_model_for_role(
         role: Display name for logging (e.g., "Supervisor", "Music Expert")
         env_var: Environment variable to read model name from
         temperature: Model temperature (default 0)
+        default: Default model if env var not set (default: gpt-4o-mini)
         **kwargs: Additional arguments passed to the model constructor
 
     Returns:
         Configured BaseChatModel instance
     """
-    model_name = os.getenv(env_var, DEFAULT_MODEL).strip().lower()
+    fallback = default or DEFAULT_MODEL
+    model_name = os.getenv(env_var, fallback).strip().lower()
     if not model_name:
-        model_name = DEFAULT_MODEL
+        model_name = fallback
 
     # Auto-detect provider from model name
     if model_name.startswith("gemini"):
@@ -262,10 +272,15 @@ def create_support_rep_node(model: ChatOpenAI):
     """Create the support rep node."""
     support_model = model.bind_tools(SUPPORT_TOOLS)
 
-    def support_rep(state: State) -> dict:
-        """Handle account and support queries."""
-        # Inject customer context into the prompt
-        customer_id = state.get("customer_id", "unknown")
+    def support_rep(state: State, runtime: Runtime[CustomerContext]) -> dict:
+        """Handle account and support queries.
+
+        Args:
+            state: Graph state with messages.
+            runtime: Runtime context containing customer_id (secure, not in state).
+        """
+        # Read customer_id from runtime context (secure - not in state)
+        customer_id = runtime.context.customer_id
         context_prompt = f"{SUPPORT_REP_PROMPT}\n\nCurrent customer ID: {customer_id}"
 
         messages = [SystemMessage(content=context_prompt)] + state["messages"]
@@ -340,7 +355,7 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
 
     Environment Variables:
         SUPERVISOR_MODEL: Model for routing (default: gpt-4o-mini)
-        MUSIC_EXPERT_MODEL: Model for music queries (default: gpt-4o-mini)
+        MUSIC_EXPERT_MODEL: Model for music queries (default: gemini-2.0-flash)
         SUPPORT_REP_MODEL: Model for support operations (default: gpt-4o-mini)
     """
     # Initialize models from environment configuration
@@ -348,14 +363,17 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
         "Supervisor", "SUPERVISOR_MODEL", temperature=0
     )
     music_model = get_model_for_role(
-        "Music Expert", "MUSIC_EXPERT_MODEL", temperature=0.7
+        "Music Expert",
+        "MUSIC_EXPERT_MODEL",
+        temperature=0.7,
+        default=DEFAULT_MUSIC_MODEL,
     )
     support_model = get_model_for_role(
         "Support Rep", "SUPPORT_REP_MODEL", temperature=0, streaming=True
     )
 
-    # Create the graph
-    builder = StateGraph(State)
+    # Create the graph with context_schema for secure runtime context (customer_id)
+    builder = StateGraph(State, context_schema=CustomerContext)
 
     # Add nodes
     builder.add_node("supervisor", create_supervisor_node(supervisor_model))

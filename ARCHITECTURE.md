@@ -75,14 +75,18 @@ flowchart TB
 
 ## State Schema
 
-The graph maintains typed state across the conversation:
+The graph maintains typed state across the conversation. **Note:** `customer_id` is NOT in State - it's passed via `context_schema` for security.
 
 ```mermaid
 classDiagram
     class State {
         +List~BaseMessage~ messages
-        +int customer_id
         +str route
+    }
+    
+    class CustomerContext {
+        +int customer_id
+        &lt;&lt;dataclass&gt;&gt;
     }
     
     class BaseMessage {
@@ -303,18 +307,23 @@ Provider is auto-detected from model name prefix.
 ```mermaid
 flowchart LR
     session["Authenticated Session"]
-    config["Config Object"]
-    state["Graph State"]
+    context["context= parameter"]
+    runtime["Runtime/ToolRuntime"]
     tools["Support Tools"]
     
-    session -->|"customer_id: 16"| config
-    config -->|"injected"| state
-    state -->|"scoped queries"| tools
+    session -->|"customer_id: 16"| context
+    context -->|"context_schema"| runtime
+    runtime -->|"scoped queries"| tools
     
     style session fill:#50c878,color:#fff
+    style context fill:#4a90d9,color:#fff
 ```
 
-Customer identity is injected via configuration, simulating JWT-style session auth. The customer ID comes from the application layer, not user input.
+Customer identity is injected via `context_schema`, simulating JWT-style session auth. The customer ID:
+- Is **NOT** in graph state (prevents LLM manipulation)
+- Comes from the application layer via `context=` parameter
+- Is accessible to nodes via `Runtime[CustomerContext]`
+- Is accessible to tools via `ToolRuntime[CustomerContext]` (hidden from LLM schema)
 
 ### Tool Safety Classification
 
@@ -374,11 +383,11 @@ uv run python scripts/report_test_costs.py --tag "run-12345678"
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OPENAI_API_KEY` | (required) | OpenAI API key |
+| `GOOGLE_API_KEY` | (required) | For Gemini models (Music Expert default) |
 | `ANTHROPIC_API_KEY` | (optional) | For Claude models |
-| `GOOGLE_API_KEY` | (optional) | For Gemini models |
 | `DEEPSEEK_API_KEY` | (optional) | For DeepSeek models |
 | `SUPERVISOR_MODEL` | `gpt-4o-mini` | Model for routing |
-| `MUSIC_EXPERT_MODEL` | `gpt-4o-mini` | Model for music queries |
+| `MUSIC_EXPERT_MODEL` | `gemini-2.0-flash` | Model for music queries |
 | `SUPPORT_REP_MODEL` | `gpt-4o-mini` | Model for support |
 | `LANGCHAIN_API_KEY` | (required) | LangSmith API key |
 | `LANGCHAIN_TRACING_V2` | `true` | Enable tracing |

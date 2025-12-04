@@ -61,7 +61,7 @@ class TestApproveEndpoint:
 
     def test_approve_endpoint_exists(self, client: TestClient):
         """The /approve endpoint should exist."""
-        response = client.post("/approve/test-thread?customer_id=1")
+        response = client.post("/approve/test-thread?customer_id=16")
         assert response.status_code != 404
 
     @pytest.mark.integration
@@ -80,7 +80,7 @@ class TestApproveEndpoint:
         # Confirm the refund
         r2 = client.post(
             "/chat",
-            json={"message": "yes", "thread_id": "test-approve-789", "customer_id": 1},
+            json={"message": "yes", "thread_id": "test-approve-789", "customer_id": 16},
         )
 
         # Verify HITL triggered
@@ -89,7 +89,7 @@ class TestApproveEndpoint:
         )
 
         # Then approve
-        response = client.post("/approve/test-approve-789?customer_id=1")
+        response = client.post("/approve/test-approve-789?customer_id=16")
         assert response.status_code == 200
         data = response.json()
         assert "response" in data

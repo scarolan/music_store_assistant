@@ -7,6 +7,7 @@ A production-ready **LangGraph** customer support chatbot demonstrating the Supe
 This is a **demo/interview artifact** showcasing:
 - **Supervisor Pattern**: LLM-powered routing between specialized agents
 - **Human-in-the-Loop (HITL)**: Approval workflow for refund requests
+- **Secure Context Injection**: `customer_id` via `context_schema` (not in state!)
 - **Multi-Model Support**: Swap LLM providers via environment variables
 - **Full-Stack Implementation**: FastAPI backend + chat UI + admin dashboard
 - **LangGraph Studio Ready**: `langgraph.json` configured for visual debugging
@@ -48,16 +49,17 @@ langgraph dev
 **Required `.env` variables:**
 ```bash
 OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=...              # Required - default for Music Expert
 LANGCHAIN_API_KEY=lsv2_...
 LANGCHAIN_TRACING_V2=true
 LANGCHAIN_PROJECT=music-store-assistant
 ```
 
-**Optional model overrides** (auto-detect provider from name prefix):
+**Model defaults** (auto-detect provider from name prefix):
 ```bash
-SUPERVISOR_MODEL=gpt-4o-mini      # or claude-3-5-haiku-20241022, gemini-2.0-flash
-MUSIC_EXPERT_MODEL=gpt-4o-mini
-SUPPORT_REP_MODEL=gpt-4o-mini
+SUPERVISOR_MODEL=gpt-4o-mini         # Default: gpt-4o-mini
+MUSIC_EXPERT_MODEL=gemini-2.0-flash  # Default: gemini-2.0-flash (best cost/quality)
+SUPPORT_REP_MODEL=gpt-4o-mini        # Default: gpt-4o-mini
 ```
 
 ---
@@ -78,12 +80,41 @@ Entry → Supervisor → [music_expert | support_rep]
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| **State Schema** | `src/state.py` | `TypedDict` with `messages`, `customer_id`, `route` |
+| **State Schema** | `src/state.py` | `TypedDict` with `messages`, `route` (NO customer_id!) |
+| **Context Schema** | `src/state.py` | `CustomerContext` dataclass for secure runtime context |
 | **Supervisor** | `src/graph.py` | Routes via structured output to `RouteDecision` |
 | **Music Expert** | `src/graph.py` | 5 read-only catalog tools |
-| **Support Rep** | `src/graph.py` | 3 tools (2 safe, 1 HITL-gated) |
-| **Tools** | `src/tools/music.py`, `support.py` | `@tool` decorated functions |
+| **Support Rep** | `src/graph.py` | 3 tools (2 safe, 1 HITL-gated) using `Runtime[CustomerContext]` |
+| **Tools** | `src/tools/music.py`, `support.py` | `@tool` decorated functions using `ToolRuntime[CustomerContext]` |
 | **API** | `src/api.py` | FastAPI with `/chat`, `/approve`, `/reject` endpoints |
+
+### Security: context_schema Pattern
+
+**CRITICAL**: `customer_id` is **NOT** in graph state. It uses `context_schema`:
+
+```python
+# state.py - CustomerContext is a dataclass, NOT part of State
+@dataclass
+class CustomerContext:
+    customer_id: int = 16
+
+# graph.py - Graph uses context_schema
+builder = StateGraph(State, context_schema=CustomerContext)
+
+# Nodes access via Runtime
+def support_rep(state: State, runtime: Runtime[CustomerContext]):
+    customer_id = runtime.context.customer_id  # Secure!
+
+# Tools access via ToolRuntime (hidden from LLM schema!)
+@tool
+def get_customer_info(runtime: ToolRuntime[CustomerContext]) -> str:
+    customer_id = runtime.context.customer_id  # Secure!
+
+# Invocation passes context separately
+graph.invoke({"messages": [...]}, config, context={"customer_id": 16})
+```
+
+This prevents LLM from manipulating customer_id while allowing Studio to inject it via Assistants.
 
 ### HITL Interrupt Pattern
 
@@ -91,7 +122,7 @@ Refund requests trigger `interrupt_before=["refund_tools"]`:
 1. User requests refund → Support Rep calls `process_refund`
 2. Graph pauses before executing the tool
 3. Admin approves/rejects via dashboard
-4. Graph resumes with `Command(resume=True)` or returns rejection message
+4. Graph resumes with `Command(resume=True)` (must pass `context=` again!)
 
 ---
 
@@ -147,7 +178,7 @@ uv run pytest tests/test_graph.py::TestRouting::test_router_selects_music_for_mu
 
 | Fixture | Purpose |
 |---------|---------|
-| `test_config` | Config dict with `customer_id=1` and LangSmith tags |
+| `test_config` | Config dict with `customer_id=16` and LangSmith tags |
 | `test_config_with_thread(thread_id)` | Factory for thread-specific configs (HITL tests) |
 | `db_path` | Path to Chinook.db (skips if missing) |
 | `openai_callback()` | Context manager for token tracking |
@@ -178,7 +209,7 @@ uv run pytest tests/test_graph.py::TestRouting::test_router_selects_music_for_mu
    ```python
    def test_refund_triggers_hitl(self, graph, test_config_with_thread):
        config = test_config_with_thread("test-refund-1")
-       result = graph.invoke({"messages": [...], "customer_id": 1}, config)
+       result = graph.invoke({"messages": [...], "customer_id": 16}, config)
        state = graph.get_state(config)
        assert "refund_tools" in state.next  # Interrupted before refund
    ```

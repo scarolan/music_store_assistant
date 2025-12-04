@@ -2,25 +2,28 @@
 
 These are SENSITIVE tools for account operations.
 Used by the Support_Rep node. process_refund triggers HITL approval.
+
+SECURITY NOTE: Tools access customer_id from ToolRuntime.context, which is
+injected at runtime and NOT accessible to the LLM. This prevents prompt
+injection attacks from accessing other customers' data.
 """
 
-from langchain_core.tools import tool
+from langchain.tools import tool, ToolRuntime
+from src.state import CustomerContext
 from src.utils import get_db
 
 
 @tool
-def get_customer_info(customer_id: int) -> str:
-    """Look up customer information by their ID.
+def get_customer_info(runtime: ToolRuntime[CustomerContext]) -> str:
+    """Look up YOUR customer information.
 
-    Use this tool to retrieve customer profile details like name,
+    Use this tool to retrieve your profile details like name,
     email, address, and contact information.
-
-    Args:
-        customer_id: The unique identifier for the customer.
 
     Returns:
         Customer profile information as a formatted string.
     """
+    customer_id = runtime.context.customer_id
     db = get_db()
     return db.run(
         f"""
@@ -33,24 +36,26 @@ def get_customer_info(customer_id: int) -> str:
 
 
 @tool
-def get_invoice(customer_id: int, invoice_id: int | None = None) -> str:
-    """Get invoice information for a customer.
+def get_invoice(
+    invoice_id: int | None = None, *, runtime: ToolRuntime[CustomerContext]
+) -> str:
+    """Get YOUR invoice information.
 
     Use this tool to:
-    - Look up a specific invoice by ID (provide both customer_id and invoice_id)
-    - Get a customer's invoice history (provide only customer_id)
+    - Look up a specific invoice by ID (provide invoice_id)
+    - Get your invoice history (no arguments needed)
 
     Args:
-        customer_id: The unique identifier for the customer.
         invoice_id: Optional. If provided, returns just that specific invoice.
 
     Returns:
         Invoice information as a formatted string.
     """
+    customer_id = runtime.context.customer_id
     db = get_db()
 
     if invoice_id is not None:
-        # Look up a specific invoice
+        # Look up a specific invoice - MUST belong to this customer
         result = db.run(
             f"""
             SELECT InvoiceId, InvoiceDate, BillingCity, BillingCountry, Total
@@ -60,15 +65,7 @@ def get_invoice(customer_id: int, invoice_id: int | None = None) -> str:
             include_columns=True,
         )
         if not result or result == "[]":
-            # Maybe try without customer_id filter in case they got it wrong
-            result = db.run(
-                f"""
-                SELECT InvoiceId, InvoiceDate, BillingCity, BillingCountry, Total, CustomerId
-                FROM Invoice
-                WHERE InvoiceId = {invoice_id};
-                """,
-                include_columns=True,
-            )
+            return f"Invoice {invoice_id} not found in your account."
         return result
     else:
         # Get all invoices for customer
@@ -85,14 +82,14 @@ def get_invoice(customer_id: int, invoice_id: int | None = None) -> str:
 
 
 @tool
-def process_refund(invoice_id: int) -> str:
-    """Process a refund for a specific invoice.
+def process_refund(invoice_id: int, *, runtime: ToolRuntime[CustomerContext]) -> str:
+    """Process a refund for one of YOUR invoices.
 
     IMPORTANT: This is a sensitive operation that requires human approval.
     The graph will interrupt before executing this tool to allow
     a human operator to review and approve the refund request.
 
-    Use this tool when a customer requests a refund for a purchase.
+    Use this tool when you want a refund for one of your purchases.
 
     Args:
         invoice_id: The unique identifier for the invoice to refund.
@@ -100,21 +97,20 @@ def process_refund(invoice_id: int) -> str:
     Returns:
         Confirmation message for the refund initiation.
     """
-    # In production, this would integrate with a payment processor
-    # For MVP, we return a mock confirmation
+    customer_id = runtime.context.customer_id
     db = get_db()
 
-    # Verify the invoice exists
+    # Verify the invoice exists AND belongs to this customer
     invoice_info = db.run(
         f"""
         SELECT InvoiceId, Total, CustomerId
         FROM Invoice
-        WHERE InvoiceId = {invoice_id};
+        WHERE InvoiceId = {invoice_id} AND CustomerId = {customer_id};
         """
     )
 
     if not invoice_info or invoice_info == "[]":
-        return f"Error: Invoice {invoice_id} not found."
+        return f"Error: Invoice {invoice_id} not found in your account."
 
     return f"Refund initiated for Invoice #{invoice_id}. The refund will be processed within 3-5 business days."
 
