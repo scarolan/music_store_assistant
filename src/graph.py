@@ -236,8 +236,8 @@ def create_supervisor_node(model: ChatOpenAI):
         """Route the user's request to the appropriate worker."""
         messages = [SystemMessage(content=SUPERVISOR_PROMPT)] + state["messages"]
 
-        # Use structured output for routing decision
-        router_model = model.with_structured_output(RouteDecision)
+        # Use structured output for routing decision (strict=True enforces enum values)
+        router_model = model.with_structured_output(RouteDecision, strict=True)
         decision = router_model.invoke(messages)
 
         # Add a routing note (will be skipped in output extraction)
