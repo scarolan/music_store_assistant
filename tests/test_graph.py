@@ -41,25 +41,24 @@ class TestGraphCreation:
 
         assert "support_rep" in nodes, f"Expected 'support_rep' node, got: {nodes}"
 
-    def test_graph_accepts_customer_id_in_config(self):
-        """Graph should accept customer_id via configurable parameters."""
+    def test_graph_accepts_customer_context(self):
+        """Graph should accept customer_id via context parameter (context_schema)."""
         from src.graph import create_graph
 
-        # Verify graph can be created (implicitly accepts config with customer_id)
+        # Verify graph can be created
         graph = create_graph()
         assert graph is not None
 
-        # Verify the config structure that will be used
-        config = {"configurable": {"customer_id": 1}}
-        assert "configurable" in config
-        assert "customer_id" in config["configurable"]
+        # Verify the context structure that will be used (NOT in configurable - secure!)
+        context = {"customer_id": 1}
+        assert "customer_id" in context
 
 
 class TestRouting:
     """Tests for supervisor routing logic."""
 
     @pytest.mark.integration
-    def test_router_selects_music_for_music_query(self, test_config):
+    def test_router_selects_music_for_music_query(self, test_config, test_context):
         """Supervisor should route music queries to music_expert."""
         from src.graph import create_graph
 
@@ -68,6 +67,7 @@ class TestRouting:
         result = graph.invoke(
             {"messages": [HumanMessage(content="What albums does AC/DC have?")]},
             test_config,
+            context=test_context,
         )
 
         # Should have received a response about music
@@ -76,7 +76,7 @@ class TestRouting:
         assert len(result["messages"]) > 1
 
     @pytest.mark.integration
-    def test_router_selects_support_for_account_query(self, test_config):
+    def test_router_selects_support_for_account_query(self, test_config, test_context):
         """Supervisor should route account queries to support_rep."""
         from src.graph import create_graph
 
@@ -85,6 +85,7 @@ class TestRouting:
         result = graph.invoke(
             {"messages": [HumanMessage(content="What is my email address on file?")]},
             test_config,
+            context=test_context,
         )
 
         assert result is not None
@@ -102,12 +103,13 @@ class TestHITL:
 
         checkpointer = MemorySaver()
         graph = create_graph(checkpointer=checkpointer)
-        config = test_config_with_thread("test-hitl")
+        config, context = test_config_with_thread("test-hitl")
 
         # First message: request a refund
         result = graph.invoke(
             {"messages": [HumanMessage(content="I want a refund for invoice 98")]},
             config,
+            context=context,
         )
 
         # The graph should have produced some response

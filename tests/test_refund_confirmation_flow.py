@@ -27,15 +27,15 @@ class TestRefundConfirmationFlow:
 
     def test_refund_request_triggers_hitl(self, graph, test_config_with_thread):
         """A refund request should immediately call process_refund and trigger HITL."""
-        config = test_config_with_thread("test-refund-1")
+        config, context = test_config_with_thread("test-refund-1")
 
         # User asks for refund
         result = graph.invoke(
             {
                 "messages": [HumanMessage(content="I want a refund for invoice 143")],
-                "customer_id": 1,
             },
             config,
+            context=context,
         )
 
         # Check that we hit the HITL interrupt
@@ -64,15 +64,15 @@ class TestRefundConfirmationFlow:
         """After HITL approval (using Command), the graph should resume and complete."""
         from langgraph.types import Command
 
-        config = test_config_with_thread("test-refund-approval")
+        config, context = test_config_with_thread("test-refund-approval")
 
         # User asks for refund - triggers HITL
         graph.invoke(
             {
                 "messages": [HumanMessage(content="I want a refund for invoice 143")],
-                "customer_id": 1,
             },
             config,
+            context=context,
         )
 
         # Verify we're at HITL interrupt
@@ -80,7 +80,8 @@ class TestRefundConfirmationFlow:
         assert state.next and "refund_tools" in state.next
 
         # Resume the graph (simulating admin approval)
-        graph.invoke(Command(resume=True), config)
+        # NOTE: Must pass context= again when resuming
+        graph.invoke(Command(resume=True), config, context=context)
 
         # Graph should have completed
         final_state = graph.get_state(config)
@@ -95,24 +96,24 @@ class TestRefundConfirmationFlow:
         self, graph, test_config_with_thread
     ):
         """Conversation history should be preserved even when HITL interrupts."""
-        config = test_config_with_thread("test-refund-history")
+        config, context = test_config_with_thread("test-refund-history")
 
         # Turn 1: Music query (no HITL)
         graph.invoke(
             {
                 "messages": [HumanMessage(content="What AC/DC albums do you have?")],
-                "customer_id": 1,
             },
             config,
+            context=context,
         )
 
         # Turn 2: Refund request (triggers HITL)
         graph.invoke(
             {
                 "messages": [HumanMessage(content="I want a refund for invoice 143")],
-                "customer_id": 1,
             },
             config,
+            context=context,
         )
 
         # Get state and verify history
@@ -142,7 +143,7 @@ class TestSupportRepToolCalling:
         self, graph, test_config_with_thread
     ):
         """Support rep should call process_refund when user confirms."""
-        config = test_config_with_thread("test-refund-3")
+        config, context = test_config_with_thread("test-refund-3")
 
         # Simulate a conversation where we've already discussed the invoice
         # and now the user is confirming
@@ -154,7 +155,7 @@ class TestSupportRepToolCalling:
             HumanMessage(content="yes"),
         ]
 
-        result = graph.invoke({"messages": initial_messages, "customer_id": 1}, config)
+        result = graph.invoke({"messages": initial_messages}, config, context=context)
 
         # Check what happened
         state = graph.get_state(config)
@@ -185,14 +186,14 @@ class TestSupportRepToolCalling:
 
     def test_get_invoice_uses_correct_ids(self, graph, test_config_with_thread):
         """Verify get_invoice is called with customer_id (not invoice_id)."""
-        config = test_config_with_thread("test-invoice-lookup")
+        config, context = test_config_with_thread("test-invoice-lookup")
 
         result = graph.invoke(
             {
                 "messages": [HumanMessage(content="I want a refund for invoice 143")],
-                "customer_id": 1,
             },
             config,
+            context=context,
         )
 
         # Find the get_invoice tool call
@@ -206,7 +207,7 @@ class TestSupportRepToolCalling:
                     if tc["name"] == "get_invoice":
                         args = tc["args"]
                         print(f"get_invoice called with: {args}")
-                        # customer_id should be 1 (from state), invoice_id should be 143
+                        # customer_id should be 1 (from context), invoice_id should be 143
                         assert args.get("customer_id") == 1, (
                             f"customer_id should be 1, got {args.get('customer_id')}"
                         )

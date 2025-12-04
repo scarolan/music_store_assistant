@@ -120,9 +120,13 @@ Then open http://localhost:8000 for the customer chat interface, or http://local
 from src.graph import create_graph
 
 graph = create_graph()
-config = {"configurable": {"customer_id": 1}}
 
-result = graph.invoke({"messages": [("user", "What albums does AC/DC have?")]}, config)
+# customer_id is passed via context= (secure, not in state)
+result = graph.invoke(
+    {"messages": [("user", "What albums does AC/DC have?")]},
+    config={},
+    context={"customer_id": 1}
+)
 ```
 
 ### CLI

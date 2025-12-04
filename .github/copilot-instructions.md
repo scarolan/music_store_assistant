@@ -7,6 +7,7 @@ A production-ready **LangGraph** customer support chatbot demonstrating the Supe
 This is a **demo/interview artifact** showcasing:
 - **Supervisor Pattern**: LLM-powered routing between specialized agents
 - **Human-in-the-Loop (HITL)**: Approval workflow for refund requests
+- **Secure Context Injection**: `customer_id` via `context_schema` (not in state!)
 - **Multi-Model Support**: Swap LLM providers via environment variables
 - **Full-Stack Implementation**: FastAPI backend + chat UI + admin dashboard
 - **LangGraph Studio Ready**: `langgraph.json` configured for visual debugging
@@ -79,12 +80,41 @@ Entry → Supervisor → [music_expert | support_rep]
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| **State Schema** | `src/state.py` | `TypedDict` with `messages`, `customer_id`, `route` |
+| **State Schema** | `src/state.py` | `TypedDict` with `messages`, `route` (NO customer_id!) |
+| **Context Schema** | `src/state.py` | `CustomerContext` dataclass for secure runtime context |
 | **Supervisor** | `src/graph.py` | Routes via structured output to `RouteDecision` |
 | **Music Expert** | `src/graph.py` | 5 read-only catalog tools |
-| **Support Rep** | `src/graph.py` | 3 tools (2 safe, 1 HITL-gated) |
-| **Tools** | `src/tools/music.py`, `support.py` | `@tool` decorated functions |
+| **Support Rep** | `src/graph.py` | 3 tools (2 safe, 1 HITL-gated) using `Runtime[CustomerContext]` |
+| **Tools** | `src/tools/music.py`, `support.py` | `@tool` decorated functions using `ToolRuntime[CustomerContext]` |
 | **API** | `src/api.py` | FastAPI with `/chat`, `/approve`, `/reject` endpoints |
+
+### Security: context_schema Pattern
+
+**CRITICAL**: `customer_id` is **NOT** in graph state. It uses `context_schema`:
+
+```python
+# state.py - CustomerContext is a dataclass, NOT part of State
+@dataclass
+class CustomerContext:
+    customer_id: int = 1
+
+# graph.py - Graph uses context_schema
+builder = StateGraph(State, context_schema=CustomerContext)
+
+# Nodes access via Runtime
+def support_rep(state: State, runtime: Runtime[CustomerContext]):
+    customer_id = runtime.context.customer_id  # Secure!
+
+# Tools access via ToolRuntime (hidden from LLM schema!)
+@tool
+def get_customer_info(runtime: ToolRuntime[CustomerContext]) -> str:
+    customer_id = runtime.context.customer_id  # Secure!
+
+# Invocation passes context separately
+graph.invoke({"messages": [...]}, config, context={"customer_id": 1})
+```
+
+This prevents LLM from manipulating customer_id while allowing Studio to inject it via Assistants.
 
 ### HITL Interrupt Pattern
 
@@ -92,7 +122,7 @@ Refund requests trigger `interrupt_before=["refund_tools"]`:
 1. User requests refund → Support Rep calls `process_refund`
 2. Graph pauses before executing the tool
 3. Admin approves/rejects via dashboard
-4. Graph resumes with `Command(resume=True)` or returns rejection message
+4. Graph resumes with `Command(resume=True)` (must pass `context=` again!)
 
 ---
 

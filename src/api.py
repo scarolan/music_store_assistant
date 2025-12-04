@@ -50,12 +50,15 @@ rejected_responses: dict[str, str] = {}
 def build_config(thread_id: str, customer_id: int) -> dict:
     """Build a config dict for graph invocation.
 
+    Note: customer_id is passed separately via context= parameter (context_schema),
+    NOT in configurable. This keeps it secure from LLM manipulation.
+
     Adds source and environment tags for LangSmith filtering:
     - source:webui - identifies requests from the web interface
     - test - added when LANGSMITH_TEST_MODE is set
     - ci-cd - added via LANGCHAIN_TAGS when running in GitHub Actions
     """
-    config = {"configurable": {"thread_id": thread_id, "customer_id": customer_id}}
+    config = {"configurable": {"thread_id": thread_id}}
 
     tags = ["source:webui"]  # Always tag web UI requests
 
@@ -189,13 +192,15 @@ def chat(request: ChatRequest):
         )
 
     # Invoke the graph
+    # NOTE: customer_id is passed via context= (secure, not in state)
+    # The graph uses context_schema=CustomerContext to receive it
     try:
         result = graph.invoke(
             {
                 "messages": [("user", request.message)],
-                "customer_id": request.customer_id,
             },
             config,
+            context={"customer_id": request.customer_id},
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -238,8 +243,9 @@ def approve_action(thread_id: str, customer_id: int = 1):
         )
 
     # Resume the graph (pass None to continue with existing state)
+    # NOTE: Must also pass context= when resuming for tools to access customer_id
     try:
-        result = graph.invoke(None, config)
+        result = graph.invoke(None, config, context={"customer_id": customer_id})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

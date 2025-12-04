@@ -26,27 +26,32 @@ class TestDemoFlow:
 
     @pytest.fixture
     def config(self):
-        """Standard config for demo flow."""
+        """Standard config for demo flow (thread_id only - customer_id is in context)."""
         return {
             "configurable": {
                 "thread_id": "demo-flow-test",
-                "customer_id": DEFAULT_CUSTOMER_ID,
             }
         }
 
-    def invoke_with_message(self, graph, message: str, config: dict) -> dict:
-        """Helper to invoke graph with proper state initialization.
+    @pytest.fixture
+    def context(self):
+        """Runtime context with customer_id (secure - NOT in state or configurable)."""
+        return {"customer_id": DEFAULT_CUSTOMER_ID}
 
-        customer_id must be in BOTH state and config:
-        - State: so the support rep node can read it
-        - Config: for LangGraph's configurable system
+    def invoke_with_message(
+        self, graph, message: str, config: dict, context: dict
+    ) -> dict:
+        """Helper to invoke graph with proper state and context.
+
+        customer_id is passed via context= parameter (context_schema),
+        NOT in state (secure from LLM manipulation).
         """
         return graph.invoke(
             {
                 "messages": [HumanMessage(content=message)],
-                "customer_id": DEFAULT_CUSTOMER_ID,
             },
             config=config,
+            context=context,
         )
 
     def get_route(self, result: dict) -> str:
@@ -74,12 +79,13 @@ class TestDemoFlow:
     # 1️⃣ Music Expert Path
     # =========================================================================
 
-    def test_01_acdc_query_routes_to_music(self, graph_with_memory, config):
+    def test_01_acdc_query_routes_to_music(self, graph_with_memory, config, context):
         """'What AC/DC albums do you carry?' → routes to music_expert."""
         result = self.invoke_with_message(
             graph_with_memory,
             "What AC/DC albums do you carry?",
             config,
+            context,
         )
 
         assert self.get_route(result) == "music"
@@ -88,23 +94,27 @@ class TestDemoFlow:
         response = self.get_last_ai_message(result)
         assert "AC/DC" in response or "ac/dc" in response.lower()
 
-    def test_02_jazz_query_routes_to_music(self, graph_with_memory, config):
+    def test_02_jazz_query_routes_to_music(self, graph_with_memory, config, context):
         """'What jazz artists do you have?' → routes to music_expert."""
         result = self.invoke_with_message(
             graph_with_memory,
             "What jazz artists do you have?",
             config,
+            context,
         )
 
         assert self.get_route(result) == "music"
         assert self.has_tool_call(result, "get_artists_by_genre")
 
-    def test_03_song_search_uses_check_for_songs(self, graph_with_memory, config):
+    def test_03_song_search_uses_check_for_songs(
+        self, graph_with_memory, config, context
+    ):
         """'Do you have any songs with love in the title?' → routes to music and responds about songs."""
         result = self.invoke_with_message(
             graph_with_memory,
             "Do you have any songs with 'love' in the title?",
             config,
+            context,
         )
 
         assert self.get_route(result) == "music"
@@ -117,12 +127,13 @@ class TestDemoFlow:
             or "title" in response.lower()
         )
 
-    def test_04_genre_query_calls_get_genres(self, graph_with_memory, config):
+    def test_04_genre_query_calls_get_genres(self, graph_with_memory, config, context):
         """'What genres do you carry?' → should call get_genres tool."""
         result = self.invoke_with_message(
             graph_with_memory,
             "What genres of music do you carry?",
             config,
+            context,
         )
 
         assert self.get_route(result) == "music"
@@ -132,12 +143,15 @@ class TestDemoFlow:
     # 2️⃣ Support Rep Path
     # =========================================================================
 
-    def test_05_account_query_routes_to_support(self, graph_with_memory, config):
+    def test_05_account_query_routes_to_support(
+        self, graph_with_memory, config, context
+    ):
         """'Can you tell me about my account?' → routes to support_rep."""
         result = self.invoke_with_message(
             graph_with_memory,
             "Can you tell me about my account?",
             config,
+            context,
         )
 
         assert self.get_route(result) == "support"
@@ -146,12 +160,13 @@ class TestDemoFlow:
             "not ask the user for their ID"
         )
 
-    def test_06_invoice_query_uses_tools(self, graph_with_memory, config):
+    def test_06_invoice_query_uses_tools(self, graph_with_memory, config, context):
         """Invoice query should use invoice-related tools."""
         result = self.invoke_with_message(
             graph_with_memory,
             "What are my recent invoices?",
             config,
+            context,
         )
 
         assert self.get_route(result) == "support"
@@ -160,23 +175,25 @@ class TestDemoFlow:
     # 3️⃣ Routing Edge Cases
     # =========================================================================
 
-    def test_07_greeting_routes_to_support(self, graph_with_memory, config):
+    def test_07_greeting_routes_to_support(self, graph_with_memory, config, context):
         """'Hello!' → routes to support (general inquiries)."""
         result = self.invoke_with_message(
             graph_with_memory,
             "Hello!",
             config,
+            context,
         )
 
         assert self.get_route(result) == "support"
 
-    def test_08_topic_switch_works(self, graph_with_memory, config):
+    def test_08_topic_switch_works(self, graph_with_memory, config, context):
         """User switches from support to music mid-conversation."""
         # Start with support topic
         result1 = self.invoke_with_message(
             graph_with_memory,
             "I want a refund",
             config,
+            context,
         )
         assert self.get_route(result1) == "support"
 
@@ -185,16 +202,20 @@ class TestDemoFlow:
             graph_with_memory,
             "Actually, what rock bands do you have?",
             config,
+            context,
         )
         assert self.get_route(result2) == "music"
 
-    def test_09_ambiguous_yes_continues_context(self, graph_with_memory, config):
+    def test_09_ambiguous_yes_continues_context(
+        self, graph_with_memory, config, context
+    ):
         """'yes please' after music discussion should stay in music."""
         # Ask about music first
         result1 = self.invoke_with_message(
             graph_with_memory,
             "Do you have any Led Zeppelin?",
             config,
+            context,
         )
         assert self.get_route(result1) == "music"
 
@@ -203,6 +224,7 @@ class TestDemoFlow:
             graph_with_memory,
             "yes, tell me more",
             config,
+            context,
         )
         assert self.get_route(result2) == "music"
 
@@ -210,13 +232,16 @@ class TestDemoFlow:
     # 4️⃣ HITL Refund Flow
     # =========================================================================
 
-    def test_10_refund_triggers_hitl_interrupt(self, graph_with_memory, config):
+    def test_10_refund_triggers_hitl_interrupt(
+        self, graph_with_memory, config, context
+    ):
         """Refund request should trigger HITL interrupt before processing."""
         # First, get invoice info
         result1 = self.invoke_with_message(
             graph_with_memory,
             "I'd like a refund for invoice 98",
             config,
+            context,
         )
         assert self.get_route(result1) == "support"
 
@@ -237,13 +262,14 @@ class TestDemoFlow:
     # 5️⃣ Multi-Turn Conversation
     # =========================================================================
 
-    def test_11_multi_turn_music_conversation(self, graph_with_memory, config):
+    def test_11_multi_turn_music_conversation(self, graph_with_memory, config, context):
         """Multi-turn conversation about rock music maintains context."""
         # Turn 1
         result1 = self.invoke_with_message(
             graph_with_memory,
             "I'm looking for some rock music",
             config,
+            context,
         )
         assert self.get_route(result1) == "music"
 
@@ -253,6 +279,7 @@ class TestDemoFlow:
             graph_with_memory,
             "Do you have Led Zeppelin?",
             config,
+            context,
         )
         assert self.get_route(result2) == "music"
         response = self.get_last_ai_message(result2)
@@ -269,12 +296,13 @@ class TestDemoFlow:
     # 6️⃣ Edge Cases & Robustness
     # =========================================================================
 
-    def test_12_artist_not_in_catalog(self, graph_with_memory, config):
+    def test_12_artist_not_in_catalog(self, graph_with_memory, config, context):
         """Query for artist not in database returns graceful response."""
         result = self.invoke_with_message(
             graph_with_memory,
             "Do you have any Taylor Swift albums?",
             config,
+            context,
         )
 
         assert self.get_route(result) == "music"
@@ -300,9 +328,10 @@ class TestFullDemoSession:
         config = {
             "configurable": {
                 "thread_id": "complete-demo-session",
-                "customer_id": 1,
             }
         }
+        # customer_id is passed via context (secure - NOT in state or configurable)
+        context = {"customer_id": 1}
 
         demo_script = [
             # Music queries
@@ -323,9 +352,9 @@ class TestFullDemoSession:
             result = graph_with_memory.invoke(
                 {
                     "messages": [HumanMessage(content=user_message)],
-                    "customer_id": 1,  # Include in state for support_rep
                 },
                 config=config,
+                context=context,
             )
             actual_route = result.get("route", "unknown")
 

@@ -28,9 +28,10 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
 
-from src.state import State
+from src.state import State, CustomerContext
 from src.tools.music import MUSIC_TOOLS
 from src.tools.support import (
     SUPPORT_TOOLS,
@@ -269,10 +270,15 @@ def create_support_rep_node(model: ChatOpenAI):
     """Create the support rep node."""
     support_model = model.bind_tools(SUPPORT_TOOLS)
 
-    def support_rep(state: State) -> dict:
-        """Handle account and support queries."""
-        # Inject customer context into the prompt
-        customer_id = state.get("customer_id", "unknown")
+    def support_rep(state: State, runtime: Runtime[CustomerContext]) -> dict:
+        """Handle account and support queries.
+
+        Args:
+            state: Graph state with messages.
+            runtime: Runtime context containing customer_id (secure, not in state).
+        """
+        # Read customer_id from runtime context (secure - not in state)
+        customer_id = runtime.context.customer_id
         context_prompt = f"{SUPPORT_REP_PROMPT}\n\nCurrent customer ID: {customer_id}"
 
         messages = [SystemMessage(content=context_prompt)] + state["messages"]
@@ -364,8 +370,8 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
         "Support Rep", "SUPPORT_REP_MODEL", temperature=0, streaming=True
     )
 
-    # Create the graph
-    builder = StateGraph(State)
+    # Create the graph with context_schema for secure runtime context (customer_id)
+    builder = StateGraph(State, context_schema=CustomerContext)
 
     # Add nodes
     builder.add_node("supervisor", create_supervisor_node(supervisor_model))

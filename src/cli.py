@@ -76,13 +76,15 @@ Examples:
     graph = create_graph(checkpointer=checkpointer)
 
     # Session config with source tag for LangSmith filtering
+    # NOTE: customer_id is passed via context= (context_schema), NOT in configurable
     config = {
         "configurable": {
             "thread_id": "cli-session",
-            "customer_id": args.customer_id,
         },
         "tags": ["source:cli"],
     }
+    # Secure context - customer_id comes from authenticated session, not LLM
+    context = {"customer_id": args.customer_id}
 
     print("\n" + "=" * 60)
     print("🎵  Welcome to Algorhythm Music Store!")
@@ -117,9 +119,9 @@ Examples:
             result = graph.invoke(
                 {
                     "messages": [HumanMessage(content=user_input)],
-                    "customer_id": args.customer_id,
                 },
                 config=config,
+                context=context,
             )
 
             # Check for HITL interrupt
@@ -130,10 +132,10 @@ Examples:
                 approval = input("   Approve refund? (yes/no): ").strip().lower()
 
                 if approval in ("yes", "y"):
-                    # Resume the graph
+                    # Resume the graph - must also pass context!
                     from langgraph.types import Command
 
-                    result = graph.invoke(Command(resume=True), config)
+                    result = graph.invoke(Command(resume=True), config, context=context)
                     print("   ✅ Refund approved and processed!\n")
                 else:
                     print("   ❌ Refund rejected.\n")

@@ -122,10 +122,25 @@ def test_config():
 
     Always includes 'test' tag. Includes 'ci-cd' when running in GitHub Actions.
 
+    Note: customer_id is NOT in configurable - use test_context fixture for that.
+
     Usage in tests:
-        result = graph.invoke({"messages": [...]}, test_config)
+        result = graph.invoke({"messages": [...]}, test_config, context=test_context)
     """
-    return {"configurable": {"customer_id": 1}, "tags": get_langsmith_tags()}
+    return {"configurable": {}, "tags": get_langsmith_tags()}
+
+
+@pytest.fixture
+def test_context():
+    """Provide the runtime context dict for graph invocation.
+
+    This is passed via the context= parameter to graph.invoke(),
+    NOT in configurable (which would be insecure).
+
+    Usage in tests:
+        result = graph.invoke({"messages": [...]}, test_config, context=test_context)
+    """
+    return {"customer_id": 1}
 
 
 @pytest.fixture
@@ -134,16 +149,20 @@ def test_config_with_thread():
 
     Always includes 'test' tag. Includes 'ci-cd' when running in GitHub Actions.
 
+    Note: Returns (config, context) tuple since they're passed separately.
+
     Usage in tests:
-        config = test_config_with_thread("my-thread-id")
-        result = graph.invoke({"messages": [...]}, config)
+        config, context = test_config_with_thread("my-thread-id")
+        result = graph.invoke({"messages": [...]}, config, context=context)
     """
 
     def _make_config(thread_id: str, customer_id: int = 1):
-        return {
-            "configurable": {"thread_id": thread_id, "customer_id": customer_id},
+        config = {
+            "configurable": {"thread_id": thread_id},
             "tags": get_langsmith_tags(),
         }
+        context = {"customer_id": customer_id}
+        return config, context
 
     return _make_config
 

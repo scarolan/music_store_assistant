@@ -3,27 +3,18 @@
 These are SENSITIVE tools for account operations.
 Used by the Support_Rep node. process_refund triggers HITL approval.
 
-SECURITY NOTE: Tools that access customer data read customer_id from the
-RunnableConfig, NOT from LLM parameters. The config parameter is hidden from
-the LLM's tool schema, preventing prompt injection attacks from accessing
-other customers' data.
+SECURITY NOTE: Tools access customer_id from ToolRuntime.context, which is
+injected at runtime and NOT accessible to the LLM. This prevents prompt
+injection attacks from accessing other customers' data.
 """
 
-from langchain_core.runnables import RunnableConfig
-from langchain_core.tools import tool
+from langchain.tools import tool, ToolRuntime
+from src.state import CustomerContext
 from src.utils import get_db
 
 
-def _get_customer_id(config: RunnableConfig) -> int:
-    """Extract customer_id from config, raising error if not found."""
-    customer_id = config.get("configurable", {}).get("customer_id")
-    if customer_id is None:
-        raise ValueError("customer_id not found in config - authentication required")
-    return int(customer_id)
-
-
 @tool
-def get_customer_info(config: RunnableConfig) -> str:
+def get_customer_info(runtime: ToolRuntime[CustomerContext]) -> str:
     """Look up YOUR customer information.
 
     Use this tool to retrieve your profile details like name,
@@ -32,7 +23,7 @@ def get_customer_info(config: RunnableConfig) -> str:
     Returns:
         Customer profile information as a formatted string.
     """
-    customer_id = _get_customer_id(config)
+    customer_id = runtime.context.customer_id
     db = get_db()
     return db.run(
         f"""
@@ -45,7 +36,9 @@ def get_customer_info(config: RunnableConfig) -> str:
 
 
 @tool
-def get_invoice(invoice_id: int | None = None, *, config: RunnableConfig) -> str:
+def get_invoice(
+    invoice_id: int | None = None, *, runtime: ToolRuntime[CustomerContext]
+) -> str:
     """Get YOUR invoice information.
 
     Use this tool to:
@@ -58,7 +51,7 @@ def get_invoice(invoice_id: int | None = None, *, config: RunnableConfig) -> str
     Returns:
         Invoice information as a formatted string.
     """
-    customer_id = _get_customer_id(config)
+    customer_id = runtime.context.customer_id
     db = get_db()
 
     if invoice_id is not None:
@@ -89,7 +82,7 @@ def get_invoice(invoice_id: int | None = None, *, config: RunnableConfig) -> str
 
 
 @tool
-def process_refund(invoice_id: int, *, config: RunnableConfig) -> str:
+def process_refund(invoice_id: int, *, runtime: ToolRuntime[CustomerContext]) -> str:
     """Process a refund for one of YOUR invoices.
 
     IMPORTANT: This is a sensitive operation that requires human approval.
@@ -104,7 +97,7 @@ def process_refund(invoice_id: int, *, config: RunnableConfig) -> str:
     Returns:
         Confirmation message for the refund initiation.
     """
-    customer_id = _get_customer_id(config)
+    customer_id = runtime.context.customer_id
     db = get_db()
 
     # Verify the invoice exists AND belongs to this customer
