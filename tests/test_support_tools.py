@@ -51,8 +51,8 @@ class TestToolFunctionality:
         """get_customer_info should return customer details."""
         from src.tools.support import get_customer_info
 
-        # Customer ID 1 exists in Chinook
-        result = get_customer_info.invoke({"customer_id": 1}, config=test_config)
+        # Customer ID 1 exists in Chinook (from test_config)
+        result = get_customer_info.invoke({}, config=test_config)
 
         assert result is not None
         assert "1" in str(result)  # Customer ID should be in result
@@ -62,8 +62,8 @@ class TestToolFunctionality:
         """get_invoice should return invoice details for a customer."""
         from src.tools.support import get_invoice
 
-        # Customer 1 has invoices in Chinook
-        result = get_invoice.invoke({"customer_id": 1}, config=test_config)
+        # Customer 1 has invoices in Chinook (from test_config)
+        result = get_invoice.invoke({}, config=test_config)
 
         assert result is not None
 
@@ -72,7 +72,22 @@ class TestToolFunctionality:
         """process_refund should return a confirmation message."""
         from src.tools.support import process_refund
 
-        result = process_refund.invoke({"invoice_id": 1}, config=test_config)
+        # Invoice 98 belongs to customer 1 (from test_config)
+        result = process_refund.invoke({"invoice_id": 98}, config=test_config)
 
         assert result is not None
         assert "refund" in result.lower() or "initiated" in result.lower()
+
+    @pytest.mark.integration
+    def test_process_refund_rejects_other_customer_invoice(self, test_config):
+        """process_refund should reject invoices that don't belong to the customer.
+
+        This tests the security fix: customer_id comes from config (authenticated
+        session), not from LLM parameters, preventing cross-customer data access.
+        """
+        from src.tools.support import process_refund
+
+        # Invoice 1 belongs to customer 2, but test_config has customer_id=1
+        result = process_refund.invoke({"invoice_id": 1}, config=test_config)
+
+        assert "not found in your account" in result.lower()
