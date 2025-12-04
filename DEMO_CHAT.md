@@ -175,7 +175,7 @@ I'm looking for some rock music
 > Agent responds with rock artists
 
 ```
-Tell me more about 1 (or whatever number Led Zeppelin is)
+Tell me more about Led Zeppelin
 ```
 > Agent calls `get_albums_by_artist("Led Zeppelin")`
 
@@ -186,7 +186,7 @@ What are their most popular songs?
 
 **What to point out in Studio:**
 - 📝 Show the `messages` array growing in state
-- 🔗 Highlight how the second and third queries are ambiguous without context.
+- 🔗 Highlight how the third query is ambiguous without conversation history.
 - 🧠 *"The agent resolved the pronoun 'their' by looking at conversation history"*
 - 🤯 It's interesting to note that the LLM did a pretty good job picking the most popular songs, without any explicit instructions on how to do that!
 
