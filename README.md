@@ -18,7 +18,7 @@ flowchart TD
     supervisor -->|"support query"| support_rep
 
     subgraph Music["🎵 Music Expert"]
-        music_expert["Music Expert<br/>(GPT-4o-mini)"]
+        music_expert["Music Expert<br/>(Gemini 2.0 Flash)"]
         music_tools[["🔧 Music Tools<br/>• get_albums_by_artist<br/>• get_tracks_by_artist<br/>• check_for_songs<br/>• get_artists_by_genre<br/>• list_genres"]]
         music_expert -->|"needs data"| music_tools
         music_tools --> music_expert
@@ -58,7 +58,7 @@ flowchart TD
 | Component | Model | Purpose |
 |-----------|-------|---------|
 | **Supervisor** | GPT-4o-mini | Routes requests to Music Expert or Support Rep |
-| **Music Expert** | GPT-4o-mini (or Gemini/Claude) | Catalog queries - albums, tracks, artists, genres |
+| **Music Expert** | Gemini 2.0 Flash | Catalog queries - albums, tracks, artists, genres |
 | **Support Rep** | GPT-4o-mini | Account info, invoices, refunds |
 | **HITL Gate** | — | Requires human approval for refunds |
 
@@ -67,6 +67,7 @@ flowchart TD
 1. Create a `.env` file with your API keys (see `.env.example` for all options):
    ```bash
    OPENAI_API_KEY=your-key-here
+   GOOGLE_API_KEY=your-key-here
    LANGCHAIN_API_KEY=your-key-here
    LANGCHAIN_TRACING_V2=true
    LANGCHAIN_PROJECT=music-store-assistant
@@ -84,20 +85,19 @@ flowchart TD
 
 ## Model Configuration
 
-All models default to `gpt-4o-mini` but can be swapped via environment variables:
+Models are configured via environment variables with provider auto-detection:
+
+| Agent | Default Model | Why |
+|-------|---------------|-----|
+| Supervisor | gpt-4o-mini | Fast routing decisions |
+| Music Expert | gemini-2.0-flash | Best cost/quality ratio (validated by evals) |
+| Support Rep | gpt-4o-mini | Reliable for account operations |
 
 ```bash
-# OpenAI (default)
-export MUSIC_EXPERT_MODEL=gpt-4o-mini
-
-# Anthropic
-export MUSIC_EXPERT_MODEL=claude-3-5-haiku-20241022
-
-# Google Gemini
-export MUSIC_EXPERT_MODEL=gemini-2.0-flash
-
-# DeepSeek (budget option)
-export MUSIC_EXPERT_MODEL=deepseek-chat
+# Override any model:
+export MUSIC_EXPERT_MODEL=claude-3-5-haiku-20241022  # Anthropic
+export MUSIC_EXPERT_MODEL=gpt-4o                      # OpenAI
+export MUSIC_EXPERT_MODEL=deepseek-chat               # Budget option
 ```
 
 Available env vars: `SUPERVISOR_MODEL`, `MUSIC_EXPERT_MODEL`, `SUPPORT_REP_MODEL`

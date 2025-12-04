@@ -5,10 +5,10 @@ This module defines the StateGraph with:
 - Music_Expert node: Handles read-only catalog queries
 - Support_Rep node: Handles sensitive account operations (with HITL for refunds)
 
-Environment Variables (all default to gpt-4o-mini):
-- SUPERVISOR_MODEL: Model for routing decisions (e.g., gpt-4o-mini, gpt-4o)
-- MUSIC_EXPERT_MODEL: Model for music queries (e.g., gpt-4o-mini, gemini-2.0-flash, claude-sonnet-4-20250514)
-- SUPPORT_REP_MODEL: Model for support operations (e.g., gpt-4o-mini, gpt-4o)
+Environment Variables:
+- SUPERVISOR_MODEL: Model for routing decisions (default: gpt-4o-mini)
+- MUSIC_EXPERT_MODEL: Model for music queries (default: gemini-2.0-flash)
+- SUPPORT_REP_MODEL: Model for support operations (default: gpt-4o-mini)
 
 Supported providers are auto-detected from model name:
 - gpt-* → OpenAI
@@ -142,10 +142,15 @@ class RouteDecision(BaseModel):
 # --- Model Factory ---
 
 DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_MUSIC_MODEL = "gemini-2.0-flash"
 
 
 def get_model_for_role(
-    role: str, env_var: str, temperature: float = 0, **kwargs
+    role: str,
+    env_var: str,
+    temperature: float = 0,
+    default: str | None = None,
+    **kwargs,
 ) -> BaseChatModel:
     """Create a chat model based on environment configuration.
 
@@ -159,14 +164,16 @@ def get_model_for_role(
         role: Display name for logging (e.g., "Supervisor", "Music Expert")
         env_var: Environment variable to read model name from
         temperature: Model temperature (default 0)
+        default: Default model if env var not set (default: gpt-4o-mini)
         **kwargs: Additional arguments passed to the model constructor
 
     Returns:
         Configured BaseChatModel instance
     """
-    model_name = os.getenv(env_var, DEFAULT_MODEL).strip().lower()
+    fallback = default or DEFAULT_MODEL
+    model_name = os.getenv(env_var, fallback).strip().lower()
     if not model_name:
-        model_name = DEFAULT_MODEL
+        model_name = fallback
 
     # Auto-detect provider from model name
     if model_name.startswith("gemini"):
@@ -340,7 +347,7 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
 
     Environment Variables:
         SUPERVISOR_MODEL: Model for routing (default: gpt-4o-mini)
-        MUSIC_EXPERT_MODEL: Model for music queries (default: gpt-4o-mini)
+        MUSIC_EXPERT_MODEL: Model for music queries (default: gemini-2.0-flash)
         SUPPORT_REP_MODEL: Model for support operations (default: gpt-4o-mini)
     """
     # Initialize models from environment configuration
@@ -348,7 +355,10 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
         "Supervisor", "SUPERVISOR_MODEL", temperature=0
     )
     music_model = get_model_for_role(
-        "Music Expert", "MUSIC_EXPERT_MODEL", temperature=0.7
+        "Music Expert",
+        "MUSIC_EXPERT_MODEL",
+        temperature=0.7,
+        default=DEFAULT_MUSIC_MODEL,
     )
     support_model = get_model_for_role(
         "Support Rep", "SUPPORT_REP_MODEL", temperature=0, streaming=True

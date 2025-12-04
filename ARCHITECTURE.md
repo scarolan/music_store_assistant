@@ -374,11 +374,11 @@ uv run python scripts/report_test_costs.py --tag "run-12345678"
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OPENAI_API_KEY` | (required) | OpenAI API key |
+| `GOOGLE_API_KEY` | (required) | For Gemini models (Music Expert default) |
 | `ANTHROPIC_API_KEY` | (optional) | For Claude models |
-| `GOOGLE_API_KEY` | (optional) | For Gemini models |
 | `DEEPSEEK_API_KEY` | (optional) | For DeepSeek models |
 | `SUPERVISOR_MODEL` | `gpt-4o-mini` | Model for routing |
-| `MUSIC_EXPERT_MODEL` | `gpt-4o-mini` | Model for music queries |
+| `MUSIC_EXPERT_MODEL` | `gemini-2.0-flash` | Model for music queries |
 | `SUPPORT_REP_MODEL` | `gpt-4o-mini` | Model for support |
 | `LANGCHAIN_API_KEY` | (required) | LangSmith API key |
 | `LANGCHAIN_TRACING_V2` | `true` | Enable tracing |
