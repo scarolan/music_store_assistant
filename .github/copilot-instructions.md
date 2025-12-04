@@ -48,16 +48,17 @@ langgraph dev
 **Required `.env` variables:**
 ```bash
 OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=...              # Required - default for Music Expert
 LANGCHAIN_API_KEY=lsv2_...
 LANGCHAIN_TRACING_V2=true
 LANGCHAIN_PROJECT=music-store-assistant
 ```
 
-**Optional model overrides** (auto-detect provider from name prefix):
+**Model defaults** (auto-detect provider from name prefix):
 ```bash
-SUPERVISOR_MODEL=gpt-4o-mini      # or claude-3-5-haiku-20241022, gemini-2.0-flash
-MUSIC_EXPERT_MODEL=gpt-4o-mini
-SUPPORT_REP_MODEL=gpt-4o-mini
+SUPERVISOR_MODEL=gpt-4o-mini         # Default: gpt-4o-mini
+MUSIC_EXPERT_MODEL=gemini-2.0-flash  # Default: gemini-2.0-flash (best cost/quality)
+SUPPORT_REP_MODEL=gpt-4o-mini        # Default: gpt-4o-mini
 ```
 
 ---
