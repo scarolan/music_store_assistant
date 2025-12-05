@@ -29,6 +29,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.runtime import Runtime
+from langgraph.types import RetryPolicy
 from pydantic import BaseModel, Field
 
 from src.state import State, CustomerContext
@@ -239,7 +240,22 @@ def create_supervisor_node(model: ChatOpenAI):
 
         # Use structured output for routing decision (strict=True enforces enum values)
         router_model = model.with_structured_output(RouteDecision, strict=True)
-        decision = router_model.invoke(messages)
+
+        try:
+            decision = router_model.invoke(messages)
+        except Exception as e:
+            # If structured output parsing fails, default to support
+            # This handles edge cases where LLM returns malformed JSON
+            print(f"⚠️ Supervisor routing failed: {e}, defaulting to support")
+            return {
+                "messages": [
+                    AIMessage(
+                        content="[Routing to support: parsing error fallback]",
+                        name="supervisor",
+                    )
+                ],
+                "route": "support",
+            }
 
         # Add a routing note (will be skipped in output extraction)
         routing_msg = AIMessage(
@@ -372,14 +388,26 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
     # Create the graph with context_schema for secure runtime context (customer_id)
     builder = StateGraph(State, context_schema=CustomerContext)
 
+    # Define retry policy for tool nodes (handles transient API/network failures)
+    tool_retry_policy = RetryPolicy(
+        max_attempts=3,
+        initial_interval=1.0,  # Start with 1 second delay
+        backoff_factor=2.0,  # Double the delay each retry
+        max_interval=10.0,  # Cap at 10 seconds
+    )
+
     # Add nodes
     builder.add_node("supervisor", create_supervisor_node(supervisor_model))
     builder.add_node("music_expert", create_music_expert_node(music_model))
     builder.add_node("support_rep", create_support_rep_node(support_model))
-    builder.add_node("music_tools", ToolNode(MUSIC_TOOLS))
-    builder.add_node("support_tools", ToolNode(SAFE_SUPPORT_TOOLS))
     builder.add_node(
-        "refund_tools", ToolNode(HITL_SUPPORT_TOOLS)
+        "music_tools", ToolNode(MUSIC_TOOLS), retry_policy=tool_retry_policy
+    )
+    builder.add_node(
+        "support_tools", ToolNode(SAFE_SUPPORT_TOOLS), retry_policy=tool_retry_policy
+    )
+    builder.add_node(
+        "refund_tools", ToolNode(HITL_SUPPORT_TOOLS), retry_policy=tool_retry_policy
     )  # Separate node for HITL
 
     # Set entry point
