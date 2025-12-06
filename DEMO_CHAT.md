@@ -149,12 +149,12 @@ What genres of music do you have?
 
 #### Step 2: Drill into a genre
 ```
-What tracks are in the Latin genre?
+What tracks are in the Easy Listening genre?
 ```
 
 **What to point out in Studio:**
 - 🧠 *"Notice the agent is smart enough to figure out the workflow on its own"*
-- 🔧 **First tool call:** `get_artists_by_genre("Latin")` — gets artists
+- 🔧 **First tool call:** `get_artists_by_genre("Easy Listening")` — gets artists
 - 🔧 **Second tool call:** `get_tracks_by_artist` — iterates to get actual tracks
 - 📊 Show the tool responses in sequence
 - 💡 *"I didn't tell it to do two queries. It reasoned through the schema and realized it needed to chain these tools together."*
