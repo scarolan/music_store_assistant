@@ -10,14 +10,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
-from langgraph.checkpoint.memory import MemorySaver
+from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+from fastapi.responses import FileResponse  # noqa: E402
+from pydantic import BaseModel  # noqa: E402
+from langgraph.checkpoint.memory import MemorySaver  # noqa: E402
 
-from src.graph import create_graph
+from src.graph import create_graph  # noqa: E402
 
 # Initialize the app
 app = FastAPI(
