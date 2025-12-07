@@ -30,7 +30,8 @@ class TestDemoFlow:
         return {
             "configurable": {
                 "thread_id": "demo-flow-test",
-            }
+            },
+            "run_name": "music_store_assistant_test",
         }
 
     @pytest.fixture
@@ -328,7 +329,8 @@ class TestFullDemoSession:
         config = {
             "configurable": {
                 "thread_id": "complete-demo-session",
-            }
+            },
+            "run_name": "music_store_assistant_test",
         }
         # customer_id is passed via context (secure - NOT in state or configurable)
         context = {"customer_id": 16}
