@@ -127,7 +127,11 @@ def test_config():
     Usage in tests:
         result = graph.invoke({"messages": [...]}, test_config, context=test_context)
     """
-    return {"configurable": {}, "tags": get_langsmith_tags()}
+    return {
+        "configurable": {},
+        "tags": get_langsmith_tags(),
+        "run_name": "music_store_assistant_test",
+    }
 
 
 @pytest.fixture
@@ -160,6 +164,7 @@ def test_config_with_thread():
         config = {
             "configurable": {"thread_id": thread_id},
             "tags": get_langsmith_tags(),
+            "run_name": "music_store_assistant_test",
         }
         context = {"customer_id": customer_id}
         return config, context
