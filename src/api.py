@@ -4,7 +4,12 @@ import os
 import uuid
 from typing import Optional
 
+# Load environment variables FIRST, before any LangChain/LangGraph imports
+# This ensures LANGCHAIN_PROJECT is set before LangSmith tracing initializes
 from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,9 +18,6 @@ from pydantic import BaseModel
 from langgraph.checkpoint.memory import MemorySaver
 
 from src.graph import create_graph
-
-# Load environment variables from .env (must be after imports but before usage)
-load_dotenv()
 
 # Initialize the app
 app = FastAPI(
@@ -58,7 +60,10 @@ def build_config(thread_id: str, customer_id: int) -> dict:
     - test - added when LANGSMITH_TEST_MODE is set
     - ci-cd - added via LANGCHAIN_TAGS when running in GitHub Actions
     """
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "run_name": "music_store_assistant_webui",  # Shows in LangSmith Name column
+    }
 
     tags = ["source:webui"]  # Always tag web UI requests
 
