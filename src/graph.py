@@ -231,7 +231,7 @@ def get_model_for_role(
 # --- Node Functions ---
 
 
-def create_supervisor_node(model: ChatOpenAI):
+def create_supervisor_node(model: BaseChatModel):
     """Create the supervisor node that routes requests."""
 
     def supervisor(state: State) -> dict:
@@ -285,7 +285,7 @@ def create_music_expert_node(model: BaseChatModel):
     return music_expert
 
 
-def create_support_rep_node(model: ChatOpenAI):
+def create_support_rep_node(model: BaseChatModel):
     """Create the support rep node."""
     support_model = model.bind_tools(SUPPORT_TOOLS)
 
