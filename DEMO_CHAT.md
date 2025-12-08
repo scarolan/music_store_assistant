@@ -18,7 +18,7 @@ Show me my recent purchases.
 
 I'd like a refund for invoice 134
 
-## Part 2 - LangGraph Studio
+## Part 2 - LangSmith Studio
 
 What genres of music do you have?
 

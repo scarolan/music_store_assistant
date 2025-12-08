@@ -34,7 +34,7 @@ class State(TypedDict):
 
     Attributes:
         messages: Conversation history with add_messages reducer for proper merging.
-        route: Internal routing decision from supervisor (music, support, respond).
+        route: Internal routing decision from supervisor (music or support).
 
     Note:
         customer_id is NOT in state - it's in CustomerContext for security.
