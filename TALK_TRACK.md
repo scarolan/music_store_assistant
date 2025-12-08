@@ -297,7 +297,7 @@ Be ready for questions like:
 - **Tool Isolation**: Music Expert has read-only tools, Support Rep has write tools
 - **HITL Gate**: Sensitive operations (refunds) require human approval
 - **State Persistence**: Checkpointer enables conversation resumption after approval
-- **Configurable Models**: Music Expert can use Gemini or OpenAI (`MUSIC_EXPERT_MODEL` env var)
+- **Configurable Models**: Any agent's model can be overridden via env vars (`SUPERVISOR_MODEL`, `MUSIC_EXPERT_MODEL`, `SUPPORT_REP_MODEL`)
 
 ---
 

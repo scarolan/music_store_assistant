@@ -7,7 +7,7 @@ This module defines the StateGraph with:
 
 Environment Variables:
 - SUPERVISOR_MODEL: Model for routing decisions (default: gpt-4o-mini)
-- MUSIC_EXPERT_MODEL: Model for music queries (default: gemini-2.0-flash)
+- MUSIC_EXPERT_MODEL: Model for music queries (default: gpt-4o-mini)
 - SUPPORT_REP_MODEL: Model for support operations (default: gpt-4o-mini)
 
 Supported providers are auto-detected from model name:
@@ -147,7 +147,6 @@ class RouteDecision(BaseModel):
 # --- Model Factory ---
 
 DEFAULT_MODEL = "gpt-4o-mini"
-DEFAULT_MUSIC_MODEL = "gemini-2.0-flash"
 
 
 def get_model_for_role(
@@ -368,7 +367,7 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
 
     Environment Variables:
         SUPERVISOR_MODEL: Model for routing (default: gpt-4o-mini)
-        MUSIC_EXPERT_MODEL: Model for music queries (default: gemini-2.0-flash)
+        MUSIC_EXPERT_MODEL: Model for music queries (default: gpt-4o-mini)
         SUPPORT_REP_MODEL: Model for support operations (default: gpt-4o-mini)
     """
     # Initialize models from environment configuration
@@ -379,7 +378,6 @@ def create_graph(checkpointer: Optional[BaseCheckpointSaver] = None):
         "Music Expert",
         "MUSIC_EXPERT_MODEL",
         temperature=0.7,
-        default=DEFAULT_MUSIC_MODEL,
     )
     support_model = get_model_for_role(
         "Support Rep", "SUPPORT_REP_MODEL", temperature=0, streaming=True

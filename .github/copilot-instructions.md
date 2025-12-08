@@ -58,7 +58,7 @@ LANGCHAIN_PROJECT=music-store-assistant
 **Model defaults** (auto-detect provider from name prefix):
 ```bash
 SUPERVISOR_MODEL=gpt-4o-mini         # Default: gpt-4o-mini
-MUSIC_EXPERT_MODEL=gemini-2.0-flash  # Default: gemini-2.0-flash (best cost/quality)
+MUSIC_EXPERT_MODEL=gpt-4o-mini       # Default: gpt-4o-mini
 SUPPORT_REP_MODEL=gpt-4o-mini        # Default: gpt-4o-mini
 ```
 
