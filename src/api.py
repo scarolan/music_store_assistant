@@ -10,6 +10,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Configure OpenTelemetry BEFORE importing LangChain/LangGraph
+# This ensures the TracerProvider is set globally before any tracing starts
+from src.otel import configure_otel_tracing, shutdown_otel_tracing  # noqa: E402
+
+configure_otel_tracing()
+
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
@@ -170,6 +176,12 @@ def check_graph_interrupted(
 
 
 # --- Endpoints ---
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    """Shutdown hook to flush OTEL traces before exit."""
+    shutdown_otel_tracing()
 
 
 @app.get("/health")
