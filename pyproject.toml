@@ -3,6 +3,7 @@ name = "music-store-assistant"
 version = "0.1.0"
 description = "Customer Support Bot for Algorhythm Music Store - LangGraph Demo"
 readme = "README.md"
+license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = [
     "langchain>=0.3.0",

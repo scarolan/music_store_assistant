@@ -47,9 +47,9 @@ User Request → Supervisor (Router) → [Music Expert | Support Rep] → Tools 
 
 ### Observability (OTEL Branch)
 - **OpenTelemetry SDK**: OTLP/HTTP exporter to Grafana Cloud
-- **OpenInference Instrumentation**: LangChain auto-instrumentation with full trace hierarchy
+- **OpenInference Instrumentation**: Auto-instrumentation with full trace hierarchy
 - **Custom Attribute Filtering**: Reduces span bloat while preserving essential debugging data
-- **LangSmith**: Parallel tracing for LangGraph-specific visualization (not replaced by OTEL)
+- **LangSmith**: Optional (provides complementary agent-focused debugging UI)
 
 ### LLM Providers (Auto-Detected)
 - **OpenAI**: `gpt-*` models (default: gpt-4o-mini)
@@ -292,19 +292,17 @@ export DEEPSEEK_API_KEY=sk-...
 
 ### Viewing Traces
 
-**LangSmith** (automatic if LANGCHAIN_TRACING_V2=true):
-- URL: https://smith.langchain.com/
-- Project: `LANGCHAIN_PROJECT` env var (default: "music-store-assistant")
-- Shows: LangGraph execution flow, node boundaries, state transitions
-
-**Grafana Cloud** (OTEL branch, requires setup):
+**Grafana Cloud** (OTEL branch, primary observability):
 - URL: Your Grafana instance → Explore → Tempo
 - Query: `{service.name="music-store-assistant"}`
-- Shows: Token counts, latency, LLM provider metrics, tool execution
+- Shows: Token counts, latency, LLM provider metrics, tool execution, full trace hierarchy
+- Provides: Dashboards, alerting, long-term retention, unified observability
 
-**Key Difference**:
-- LangSmith: Best for debugging graph logic (which nodes ran, state mutations)
-- Grafana: Best for production monitoring (cost, latency, error rates)
+**LangSmith** (optional, complementary debugging tool):
+- URL: https://smith.langchain.com/
+- Project: `LANGCHAIN_PROJECT` env var (default: "music-store-assistant")
+- Shows: Agent-specific execution flow, node boundaries, state transitions
+- Note: Requires separate API key, can run in parallel with OTEL
 
 ## Troubleshooting
 
@@ -384,4 +382,4 @@ export DEEPSEEK_API_KEY=sk-...
 
 **Last Updated**: 2026-01-05
 **Primary Contacts**: See repository contributors
-**License**: See LICENSE file
+**License**: MIT License - See LICENSE file
