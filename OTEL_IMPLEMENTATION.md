@@ -2,7 +2,22 @@
 
 **Technical deep-dive: Adding OTEL instrumentation to an LLM application**
 
-This guide walks through the complete implementation of OpenTelemetry tracing for the Music Store Assistant, demonstrating production-ready patterns for LLM observability.
+This guide walks through the complete implementation of OpenTelemetry tracing for the Music Store Assistant, demonstrating production-ready patterns for LLM observability with Grafana Cloud.
+
+> 📖 **Coming from the blog?** This is the technical companion guide with full code examples and implementation details. Start here if you're ready to add OTEL to your own LLM application.
+
+## What You'll Learn
+
+- How to instrument an LLM application with OpenTelemetry
+- Using OpenInference for automatic LLM trace capture
+- Implementing attribute filtering to keep traces lean (80-90% size reduction)
+- Configuring OTLP export to Grafana Cloud
+- Production patterns: sampling, custom attributes, monitoring
+- Troubleshooting common issues
+
+**Time to implement:** ~30-60 minutes for a working setup
+
+**Prerequisites:** Basic Python knowledge, existing LLM application, Grafana Cloud account
 
 ---
 
@@ -835,8 +850,22 @@ def call_external_service():
 - **OpenInference specification**: https://github.com/Arize-ai/openinference
 - **OTLP specification**: https://opentelemetry.io/docs/specs/otlp/
 - **Grafana Tempo docs**: https://grafana.com/docs/tempo/latest/
+- **Grafana Cloud signup**: https://grafana.com/get
 - **This repository**: https://github.com/scarolan/music_store_assistant
+
+## Related Documentation
+
+- **[README.md](README.md)** - Quick start guide and project overview
+- **[CLAUDE.md](CLAUDE.md)** - Comprehensive codebase context for AI assistants
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed system architecture
 
 ---
 
-**Questions or issues?** Open an issue in the repo or reach out on [Grafana Community Slack](https://slack.grafana.com/).
+**Questions or issues?**
+- Open an issue: [GitHub Issues](https://github.com/scarolan/music_store_assistant/issues)
+- Join the community: [Grafana Community Slack](https://slack.grafana.com/)
+- Contact: Sean Carolan ([@scarolan](https://github.com/scarolan))
+
+---
+
+*This guide is part of the Music Store Assistant project - a demonstration of production-ready LLM observability for Grafana Labs.*
