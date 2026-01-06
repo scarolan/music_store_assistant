@@ -3,9 +3,9 @@
 [![CI](https://github.com/scarolan/music_store_assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/scarolan/music_store_assistant/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**A demonstration of production-ready LLM observability using OpenTelemetry and Grafana Cloud.**
+**A demonstration application showcasing LLM observability with OpenTelemetry and Grafana Cloud.**
 
-This project showcases how to instrument an AI agent application with full observability - tracking costs, performance, and behavior in production. The demo implements a customer support chatbot with:
+This project is an SE "art of the possible" demo that shows how to instrument an AI agent application with full observability - tracking costs, performance, and execution flow. Not intended for production use. The demo implements a customer support chatbot with:
 
 - **Multi-agent architecture** (Supervisor/Router pattern)
 - **Human-in-the-Loop** approval for sensitive operations
@@ -280,7 +280,7 @@ Watch the traces appear in Grafana in real-time!
 - **Tool calling**: Database queries and business logic
 - **Human-in-the-Loop**: Approval workflow for sensitive operations
 
-### 🔭 Production Observability
+### 🔭 Observability Features
 - **OpenTelemetry instrumentation**: Auto-instrumentation with OpenInference
 - **Attribute filtering**: Keeps traces lean (5-10KB vs 50-100KB raw)
 - **Grafana Cloud export**: OTLP/HTTP to Tempo
