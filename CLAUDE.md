@@ -45,11 +45,10 @@ User Request → Supervisor (Router) → [Music Expert | Support Rep] → Tools 
 - **FastAPI**: REST API backend for web UI
 - **SQLite (Chinook)**: Music catalog database (read-only for agents)
 
-### Observability (OTEL Branch)
+### Observability
 - **OpenTelemetry SDK**: OTLP/HTTP exporter to Grafana Cloud
 - **OpenInference Instrumentation**: Auto-instrumentation with full trace hierarchy
 - **Custom Attribute Filtering**: Reduces span bloat while preserving essential debugging data
-- **LangSmith**: Optional (provides complementary agent-focused debugging UI)
 
 ### LLM Providers (Auto-Detected)
 - **OpenAI**: `gpt-*` models (default: gpt-4o-mini)
@@ -253,16 +252,15 @@ tests/
 
 **Key Test Patterns**:
 - Use `MemorySaver` checkpointer for HITL tests
-- Tag tests with `LANGSMITH_TEST_MODE=true` to separate traces
 - Mock database in unit tests, use real DB in integration tests
-- Cost tracking via `scripts/report_test_costs.py --tag "run-{github_run_id}"`
+- All tests automatically traced via OpenInference instrumentation
 
 ### CI/CD Pipeline (.github/workflows/ci.yml)
 ```
 1. Install uv + Python 3.12
 2. Download Chinook.db
-3. Run pytest with LANGCHAIN_TAGS="ci-cd,run-{github.run_id}"
-4. Report test costs (grouped by run ID for budget tracking)
+3. Run pytest with full test suite
+4. Traces exported to Grafana Cloud (tagged with service name)
 ```
 
 ## Common Tasks
@@ -297,12 +295,6 @@ export DEEPSEEK_API_KEY=sk-...
 - Query: `{service.name="music-store-assistant"}`
 - Shows: Token counts, latency, LLM provider metrics, tool execution, full trace hierarchy
 - Provides: Dashboards, alerting, long-term retention, unified observability
-
-**LangSmith** (optional, complementary debugging tool):
-- URL: https://smith.langchain.com/
-- Project: `LANGCHAIN_PROJECT` env var (default: "music-store-assistant")
-- Shows: Agent-specific execution flow, node boundaries, state transitions
-- Note: Requires separate API key, can run in parallel with OTEL
 
 ## Troubleshooting
 
@@ -351,7 +343,7 @@ export DEEPSEEK_API_KEY=sk-...
 ### Why OpenInference + OTEL?
 - OpenInference provides rich LLM-specific spans (prompts, completions, token counts)
 - Native OTEL instrumentation doesn't understand LangChain's abstractions
-- Grafana Cloud provides long-term metric retention + alerting (LangSmith lacks this)
+- Grafana Cloud provides long-term metric retention, alerting, and unified observability
 - Attribute filtering keeps costs reasonable (raw OpenInference spans are huge)
 
 ## Related Documentation
@@ -362,24 +354,23 @@ export DEEPSEEK_API_KEY=sk-...
 - **DEMO_CHAT.md**: Sample chat transcripts for testing
 - **.env.example**: Complete list of configuration options
 
-## OTEL Branch Status
+## Observability Implementation
 
-**Branch**: `feat/enable-otel-tracing`
+**Current State**: OpenTelemetry with OpenInference is the primary observability solution
 
-**Changes**:
-- ✅ New file: `src/otel.py` (OTLP exporter + attribute filtering)
-- ✅ Modified: `src/api.py` (early OTEL init + shutdown hook)
-- ✅ Modified: `pyproject.toml` (added OTEL dependencies)
-- ⚠️ Tested: Manually confirmed traces arrive in Grafana Cloud
-- ⚠️ Not merged: Pending validation of attribute filter effectiveness in production
+**Key Components**:
+- ✅ `src/otel.py` - OTLP exporter with attribute filtering
+- ✅ `src/api.py` - Early OTEL initialization and shutdown hooks
+- ✅ OpenInference auto-instrumentation for full LangGraph tracing
+- ✅ Grafana Cloud integration via OTLP/HTTP
 
-**Migration Notes**:
-- OTEL is additive, doesn't replace LangSmith (both run in parallel)
-- No breaking changes to API or graph logic
-- Requires new env vars only if OTEL export is desired (fails gracefully if missing)
+**Configuration**:
+- Requires OTEL env vars for trace export (see `.env.example`)
+- Gracefully skips tracing if OTEL credentials not configured
+- No breaking changes to application logic
 
 ---
 
-**Last Updated**: 2026-01-05
+**Last Updated**: 2026-01-06
 **Primary Contacts**: See repository contributors
 **License**: MIT License - See LICENSE file

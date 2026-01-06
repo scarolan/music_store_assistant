@@ -356,26 +356,18 @@ flowchart TB
 ```mermaid
 flowchart LR
     lg["LangGraph"]
-    langsmith["LangSmith"]
-    traces["Traces"]
-    tokens["Token Usage"]
-    costs["Cost Reports"]
-    
-    lg -->|"all LLM calls"| langsmith
-    langsmith --> traces
-    langsmith --> tokens
-    tokens --> costs
-    
-    style langsmith fill:#7c3aed,color:#fff
-```
+    otel["OpenTelemetry<br/>(OpenInference)"]
+    grafana["Grafana Cloud"]
+    traces["Traces<br/>(Tempo)"]
+    metrics["Metrics<br/>(Prometheus)"]
 
-### CI/CD Cost Tracking
+    lg -->|"auto-instrumented"| otel
+    otel -->|"OTLP/HTTP"| grafana
+    grafana --> traces
+    grafana --> metrics
 
-Each CI run is tagged with `run-{github_run_id}` for accurate cost attribution:
-
-```bash
-# Query costs for a specific run
-uv run python scripts/report_test_costs.py --tag "run-12345678"
+    style otel fill:#f4511e,color:#fff
+    style grafana fill:#f46800,color:#fff
 ```
 
 ## Configuration Reference
@@ -389,9 +381,9 @@ uv run python scripts/report_test_costs.py --tag "run-12345678"
 | `SUPERVISOR_MODEL` | `gpt-4o-mini` | Model for routing |
 | `MUSIC_EXPERT_MODEL` | `gpt-4o-mini` | Model for music queries |
 | `SUPPORT_REP_MODEL` | `gpt-4o-mini` | Model for support |
-| `LANGCHAIN_API_KEY` | (required) | LangSmith API key |
-| `LANGCHAIN_TRACING_V2` | `true` | Enable tracing |
-| `LANGCHAIN_PROJECT` | `music-store-assistant` | LangSmith project |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | (optional) | Grafana Cloud OTLP endpoint |
+| `OTEL_EXPORTER_OTLP_HEADERS` | (optional) | Authorization header for Grafana |
+| `OTEL_SERVICE_NAME` | `music-store-assistant` | Service name in traces |
 
 ## Future Considerations
 
