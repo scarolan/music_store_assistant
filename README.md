@@ -13,10 +13,6 @@ This project is an SE "art of the possible" demo that shows how to instrument an
 - **Grafana Cloud integration** with pre-built dashboard
 - **Multi-provider LLM support** (OpenAI, Anthropic, Google, DeepSeek)
 
-📖 **[Read the blog post](https://grafana.com/blog/)** about adding OTEL to LLM applications
-
-🔧 **[Implementation guide](OTEL_IMPLEMENTATION.md)** for technical deep-dive
-
 ## Architecture
 
 ```mermaid
@@ -122,8 +118,6 @@ OTEL_SERVICE_NAME=music-store-assistant
 3. Base64 encode: `echo -n "instance_id:api_token" | base64`
 4. Use format: `Authorization=Basic%20<result>`
 
-See [OTEL_IMPLEMENTATION.md](OTEL_IMPLEMENTATION.md) for detailed setup instructions.
-
 ### 4. Run the Application
 
 ```bash
@@ -134,12 +128,34 @@ Then open:
 - **Customer chat**: http://localhost:8080
 - **Admin dashboard** (HITL approvals): http://localhost:8080/admin
 
-### 5. View Traces in Grafana
+### 5. Install the Dashboard
 
-1. Go to your Grafana Cloud instance → Explore → Tempo
+Import the pre-built dashboard to visualize your LLM application metrics:
+
+1. In Grafana Cloud, go to **Dashboards** → **New** → **Import**
+2. Click **Upload dashboard JSON file**
+3. Select `llm_o11y_dashboard.json` from this repository
+4. Choose your Prometheus and Tempo data sources
+5. Click **Import**
+
+The dashboard provides:
+- **Token usage and costs** by agent, model, and conversation
+- **Performance metrics** (latency P50/P95/P99, request rates)
+- **Error tracking** with failure rates and types
+- **Model distribution** showing which models handle requests
+
+### 6. View Traces in Grafana
+
+Explore individual conversation traces:
+
+1. Go to your Grafana Cloud instance → **Explore** → **Tempo**
 2. Query: `{service.name="music-store-assistant"}`
-3. Click on any trace to see the full conversation flow
-4. Import `llm_o11y_dashboard.json` for the pre-built dashboard
+3. Click on any trace to see the full execution flow:
+   - Supervisor routing decisions
+   - Agent selection (Music Expert vs Support Rep)
+   - Tool executions with inputs/outputs
+   - LLM calls with token counts
+   - Complete conversation hierarchy
 
 ## Model Configuration
 
@@ -260,7 +276,6 @@ Watch the traces appear in Grafana in real-time!
 │   └── admin.html      # HITL approval dashboard
 ├── tests/              # Pytest suite (80+ tests)
 ├── llm_o11y_dashboard.json  # 📈 Grafana dashboard (import me!)
-├── OTEL_IMPLEMENTATION.md   # Technical deep-dive
 ├── CLAUDE.md                # AI assistant context guide
 ├── Chinook.db               # SQLite music catalog
 └── .env.example             # Configuration template
@@ -268,7 +283,6 @@ Watch the traces appear in Grafana in real-time!
 
 ## Documentation
 
-- **[OTEL_IMPLEMENTATION.md](OTEL_IMPLEMENTATION.md)** - Complete technical guide for adding OTEL to your LLM app
 - **[CLAUDE.md](CLAUDE.md)** - Comprehensive codebase guide for AI assistants
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed system architecture and patterns
 
