@@ -1,6 +1,6 @@
 # Architecture Overview
 
-This document describes the production architecture of the Music Store Assistant, a LangGraph-based customer support chatbot for "Algorhythm" music store.
+This document describes the architecture of the Music Store Assistant, a demonstration LangGraph-based customer support chatbot for "Algorhythm" music store.
 
 ## System Architecture
 
@@ -34,7 +34,7 @@ flowchart TB
 
     subgraph External["☁️ External Services"]
         llm["LLM Provider<br/>(configurable)"]
-        langsmith["LangSmith<br/>Observability"]
+        grafana["Grafana Cloud<br/>(OTEL Tracing)"]
     end
 
     chat -->|"POST /chat"| chatEndpoint
@@ -65,7 +65,7 @@ flowchart TB
     music -.-> llm
     support -.-> llm
 
-    Graph -.->|"traces"| langsmith
+    Graph -.->|"traces"| grafana
 
     style supervisor fill:#4a90d9,stroke:#2d5a87,color:#fff
     style music fill:#50c878,stroke:#2d7a4a,color:#fff

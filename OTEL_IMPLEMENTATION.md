@@ -2,7 +2,7 @@
 
 **Technical deep-dive: Adding OTEL instrumentation to an LLM application**
 
-This guide walks through the complete implementation of OpenTelemetry tracing for the Music Store Assistant, demonstrating production-ready patterns for LLM observability with Grafana Cloud.
+This guide walks through the complete implementation of OpenTelemetry tracing for the Music Store Assistant, demonstrating practical patterns for LLM observability with Grafana Cloud.
 
 > 📖 **Coming from the blog?** This is the technical companion guide with full code examples and implementation details. Start here if you're ready to add OTEL to your own LLM application.
 
@@ -868,4 +868,4 @@ def call_external_service():
 
 ---
 
-*This guide is part of the Music Store Assistant project - a demonstration of production-ready LLM observability for Grafana Labs.*
+*This guide is part of the Music Store Assistant project - a demonstration of LLM observability with OpenTelemetry and Grafana Cloud.*

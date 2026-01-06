@@ -1,18 +1,18 @@
 # Project: Algorhythm Music Store Assistant
 
-A production-ready **LangGraph** customer support chatbot demonstrating the Supervisor/Router pattern with Human-in-the-Loop (HITL) for sensitive operations.
+A demonstration **LangGraph** customer support chatbot showcasing the Supervisor/Router pattern with Human-in-the-Loop (HITL) for sensitive operations.
 
 ## 1. Purpose & Demo Value
 
-This is a **demo/interview artifact** showcasing:
+This is an **SE "art of the possible" demo** showcasing:
 - **Supervisor Pattern**: LLM-powered routing between specialized agents
 - **Human-in-the-Loop (HITL)**: Approval workflow for refund requests
 - **Secure Context Injection**: `customer_id` via `context_schema` (not in state!)
 - **Multi-Model Support**: Swap LLM providers via environment variables
 - **Full-Stack Implementation**: FastAPI backend + chat UI + admin dashboard
-- **LangGraph Studio Ready**: `langgraph.json` configured for visual debugging
+- **LLM Observability**: Full OpenTelemetry instrumentation with Grafana Cloud
 
-**Target Audience**: Technical interviewers, customers evaluating LangGraph capabilities, and internal demos.
+**Target Audience**: Technical customers evaluating LangGraph capabilities and LLM observability solutions.
 
 ---
 
@@ -26,9 +26,9 @@ This is a **demo/interview artifact** showcasing:
 | **API** | FastAPI with async support |
 | **Database** | SQLite (Chinook.db sample data) |
 | **Testing** | pytest + pytest-asyncio |
-| **Observability** | LangSmith (traces, cost tracking) |
+| **Observability** | OpenTelemetry + Grafana Cloud (full trace hierarchy) |
 | **Package Manager** | `uv` (always use `uv run` to execute commands) |
-| **CI/CD** | GitHub Actions (formatting → linting → type-check → tests → cost report) |
+| **CI/CD** | GitHub Actions (formatting → linting → type-check → tests) |
 
 ### Environment Setup
 
@@ -49,10 +49,11 @@ langgraph dev
 **Required `.env` variables:**
 ```bash
 OPENAI_API_KEY=sk-...
-GOOGLE_API_KEY=...              # Required - default for Music Expert
-LANGCHAIN_API_KEY=lsv2_...
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_PROJECT=music-store-assistant
+
+# Optional: OTEL Tracing to Grafana Cloud
+OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp-gateway-prod-us-central-0.grafana.net/otlp
+OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic%20<base64-credentials>
+OTEL_SERVICE_NAME=music-store-assistant
 ```
 
 **Model defaults** (auto-detect provider from name prefix):
@@ -178,7 +179,7 @@ uv run pytest tests/test_graph.py::TestRouting::test_router_selects_music_for_mu
 
 | Fixture | Purpose |
 |---------|---------|
-| `test_config` | Config dict with `customer_id=16` and LangSmith tags |
+| `test_config` | Config dict with `customer_id=16` |
 | `test_config_with_thread(thread_id)` | Factory for thread-specific configs (HITL tests) |
 | `db_path` | Path to Chinook.db (skips if missing) |
 | `openai_callback()` | Context manager for token tracking |
@@ -214,21 +215,9 @@ uv run pytest tests/test_graph.py::TestRouting::test_router_selects_music_for_mu
        assert "refund_tools" in state.next  # Interrupted before refund
    ```
 
-### LangSmith Test Tagging
+### Test Tracing
 
-All tests automatically receive the `test` tag for LangSmith filtering. CI runs add `ci-cd` and `run-{github_run_id}` tags for cost attribution.
-
-```python
-# conftest.py sets LANGSMITH_TEST_MODE=1
-# Traces visible in LangSmith with filter: has(tags, "test")
-```
-
-### Cost Tracking
-
-After test runs, view token usage:
-```bash
-uv run python scripts/report_test_costs.py --minutes 30
-```
+All tests are automatically traced via OpenInference instrumentation. Traces are exported to Grafana Cloud if OTEL credentials are configured.
 
 ---
 
@@ -258,8 +247,6 @@ uv run python scripts/report_test_costs.py --minutes 30
 ├── static/
 │   ├── index.html        # Customer chat UI
 │   └── admin.html        # HITL approval dashboard
-├── scripts/
-│   └── report_test_costs.py  # LangSmith cost reporting
 ├── .github/
 │   └── workflows/ci.yml  # CI pipeline (format → lint → typecheck → tests)
 ├── langgraph.json        # LangGraph Studio configuration
@@ -348,11 +335,6 @@ uv run uvicorn src.api:app --reload --port 8000
 ```bash
 langgraph dev
 # Visual graph execution with state inspection
-```
-
-### Check test costs
-```bash
-uv run python scripts/report_test_costs.py --minutes 30
 ```
 
 ### Full CI check locally

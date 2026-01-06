@@ -18,7 +18,7 @@ Show me my recent purchases.
 
 I'd like a refund for invoice 134
 
-## Part 2 - LangSmith Studio
+## Part 2 - Additional Test Queries
 
 What genres of music do you have?
 

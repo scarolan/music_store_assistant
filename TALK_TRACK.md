@@ -246,7 +246,7 @@ I'd like a refund for invoice 134
 - 💡 *"This is what gets sent to our admin queue. In production, this could go to Slack, email, or a ticketing system."*
 
 #### Step 3: Resume or reject
-- ✅ Click **Continue** in LangSmith studio
+- ✅ Click **Continue** in LangGraph Studio (or use admin dashboard at `/admin`)
 - 🔄 Watch the graph continue execution
 - 📋 Show the final state with refund confirmation
 
@@ -256,21 +256,28 @@ I'd like a refund for invoice 134
 
 ## Part 2 Wrap-Up
 
-**Talk Track:** *"So to summarize the architecture: a Supervisor LLM routes to specialized workers, each with their own tools. Read-only operations flow through automatically. Write operations like refunds hit a HITL gate. And everything is observable in LangSmith for debugging and optimization."*
+**Talk Track:** *"So to summarize the architecture: a Supervisor LLM routes to specialized workers, each with their own tools. Read-only operations flow through automatically. Write operations like refunds hit a HITL gate. And everything is fully traced in Grafana Cloud for debugging and optimization."*
 
 ---
 
-## Bonus: LangSmith Observability (if time allows)
+## Bonus: Grafana Cloud Observability (if time allows)
 
-If the interviewer is interested in observability, switch to [LangSmith](https://smith.langchain.com):
+If the customer is interested in observability, switch to Grafana Cloud → Explore → Tempo:
 
-1. Filter by project: `music-store-assistant`
-2. Show the supervisor routing decisions
-3. Drill into tool calls and token usage
-4. Filter out test traces: `Tag is not test`
-5. Show CI runs: `Tag = ci-cd`
+1. Query: `{service.name="music-store-assistant"}`
+2. Show recent traces with full conversation hierarchy
+3. Click into a trace to show:
+   - Supervisor routing decisions (which agent was selected)
+   - Tool executions with inputs/outputs
+   - LLM calls with token counts and model info
+   - Complete parent-child span relationships
+4. Switch to the pre-built dashboard to show:
+   - Token usage and costs by agent/model
+   - Performance metrics (P50/P95/P99 latency)
+   - Error rates and types
+   - Model distribution
 
-**Talk Track:** *"Everything we just did is fully traced here. I can see exactly what the model was thinking, how long each step took, and what it cost. This is how you debug and optimize in production."*
+**Talk Track:** *"Everything we just did is fully traced here with OpenTelemetry. I can see exactly what the model was thinking, which tools it called, how long each step took, and what it cost. This is how you debug and optimize LLM applications in production - full visibility into the entire agent execution flow."*
 
 ---
 
@@ -282,9 +289,9 @@ Be ready for questions like:
 |-------|--------------|
 | *"How do you handle auth?"* | Customer ID injected via config from JWT session — never asked from user |
 | *"Why separate agents?"* | Principle of least privilege — Music Expert has no access to billing tools |
-| *"What about rate limiting?"* | LangSmith tracks usage; could add token budgets per conversation |
+| *"What about rate limiting?"* | Grafana tracks token usage; could add budgets per conversation |
 | *"How would this scale?"* | Stateless workers + Redis checkpointer = horizontal scaling |
-| *"Cost per conversation?"* | Show LangSmith traces — typically 3-5 LLM calls per turn |
+| *"Cost per conversation?"* | Show Grafana traces — typically 3-5 LLM calls per turn |
 | *"Why LangGraph vs raw LangChain?"* | Graph structure = visual debugging, interrupts, stateful checkpointing |
 | *"What about prompt injection?"* | System prompts enforce role boundaries; could add guardrails layer |
 | *"Testing strategy?"* | Pytest with mocked LLM responses; CI runs on every PR |
