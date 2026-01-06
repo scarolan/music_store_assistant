@@ -106,10 +106,6 @@ OPENAI_API_KEY=your-openai-key-here
 OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp-gateway-prod-us-central-0.grafana.net/otlp
 OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic%20<your-base64-credentials>
 OTEL_SERVICE_NAME=music-store-assistant
-
-# Optional: LangSmith (complementary debugging tool)
-# LANGCHAIN_TRACING_V2=true
-# LANGCHAIN_API_KEY=lsv2_your-key-here
 ```
 
 **Getting OTEL credentials:**
