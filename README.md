@@ -178,11 +178,28 @@ Provider is auto-detected from model name prefix (`gpt-*`, `claude-*`, `gemini-*
 
 ### Web UI (Recommended for Demos)
 
+**Quick Start** (launches server + continuous traffic generation):
+```bash
+demo/start_demo.sh   # Starts server + generates traffic for 30 minutes
+demo/stop_demo.sh    # Stops everything cleanly
+```
+
+**Manual Start**:
 ```bash
 uv run uvicorn src.api:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Then open http://localhost:8000 for the customer chat interface, or http://localhost:8000/admin for the HITL approval dashboard.
+
+**Validate Setup**:
+```bash
+demo/preflight_check.sh  # Checks all prerequisites (doesn't start anything)
+```
+
+**Monitor Traffic**:
+```bash
+tail -f /tmp/continuous-traffic.log  # Watch continuous traffic generation
+```
 
 ### Python API
 
